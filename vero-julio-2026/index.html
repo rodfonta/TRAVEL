@@ -1,0 +1,1572 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Vero Julio 2026</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#141309;--bg2:#1a1910;--card-bg:#1e1c12;--card-border:rgba(255,255,255,.09);
+  --gold:#d4a843;--text:#f0ede0;--dim:#8a8870;--muted:#6a6655;
+  --blue:#5aabff;--green:#30d158;--red:#ff453a;--amber:#ff9f0a;
+  --accent:#d4a843;
+  --blue-light:rgba(90,171,255,.12);--green-light:rgba(48,209,88,.1);
+  --red-light:rgba(255,69,58,.1);--amber-light:rgba(255,159,10,.1);
+}
+html,body{height:auto;overflow:auto}
+body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;
+  background:var(--bg);color:var(--text);font-size:16px;
+  display:flex;flex-direction:column;-webkit-font-smoothing:antialiased}
+
+.sidebar{display:none!important}
+.alertas-strip{display:none!important}
+.mobile-map-tab{display:none!important}
+
+/* iOS bottom nav — mobile only */
+.ios-nav{
+  display:flex;position:fixed;bottom:0;left:0;right:0;
+  background:rgba(28,28,26,.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-top:0.5px solid rgba(255,255,255,.12);
+  padding:6px 0 max(8px,env(safe-area-inset-bottom));
+  z-index:999;overflow-x:auto;scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;gap:0;
+}
+.ios-nav::-webkit-scrollbar{display:none}
+.ios-nav-item{
+  flex:1;min-width:56px;display:flex;flex-direction:column;align-items:center;
+  gap:2px;padding:4px 2px 2px;background:none;border:none;
+  color:rgba(255,255,255,.45);font-size:9px;font-weight:500;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;
+  font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;
+}
+.ios-nav-item.active{color:var(--gold)}
+.ios-nav-ico{font-size:20px;line-height:1;display:block}
+.ios-nav-lbl{display:block;font-size:9px;font-weight:500;letter-spacing:.1px}
+
+/* Extra bottom padding so content doesn't hide behind ios-nav */
+.content-left{padding-bottom:80px!important}
+.page-tabs{display:none}
+
+.main-area{flex:1;display:flex;flex-direction:column;min-width:0}
+
+/* HERO */
+.topbar{background:var(--bg);padding:52px 20px 0;display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;position:relative}
+.trip-title{font-size:40px;font-weight:800;letter-spacing:-.8px;color:var(--gold);line-height:1.1}
+.trip-period{font-size:14px;color:var(--dim);margin-top:5px;letter-spacing:.1px;padding-bottom:14px}
+.hero-countdown{font-size:13px;color:var(--dim);padding-bottom:14px}
+.hero-countdown strong{color:var(--text);font-weight:700}
+.trip-title-block{padding-bottom:0}
+
+/* STATS — bordered boxes, always visible */
+.stats-row{background:var(--bg);display:flex;align-items:stretch;flex-shrink:0;
+  padding:0 20px 20px;gap:8px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+.stats-row::-webkit-scrollbar{display:none}
+.stat{background:transparent;border:1px solid rgba(255,255,255,.14);border-radius:10px;
+  padding:10px 14px;min-width:80px;flex-shrink:0;display:flex;flex-direction:column;justify-content:center}
+.stat:last-child{flex:1;min-width:140px}
+.stat-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--dim);margin-bottom:4px}
+.stat-val{font-size:20px;font-weight:700;line-height:1;color:var(--text);letter-spacing:-.3px}
+.stat-sub{font-size:11px;color:var(--dim);margin-top:2px}
+.status-pills{display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;align-items:center;scrollbar-width:none}
+.status-pills::-webkit-scrollbar{display:none}
+.sp{display:inline-flex;align-items:center;gap:3px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+.sp-red{background:rgba(255,69,58,.2);color:#ff6b63}
+.sp-green{background:rgba(48,209,88,.2);color:#30d158}
+.sp-amber{background:rgba(255,159,10,.2);color:#ff9f0a}
+
+/* ADV in resumen */
+.adv-section{padding:0 20px 12px;display:flex;flex-direction:column;gap:6px}
+.adv-title{font-size:10px;font-weight:700;color:var(--red);letter-spacing:.12em;margin-bottom:2px}
+.adv-cap{background:rgba(255,69,58,.12);border:1px solid rgba(255,69,58,.2);border-radius:10px;padding:10px 14px;font-size:13px;color:var(--text);line-height:1.45}
+
+/* TABS — always visible, scrollable */
+.page-tabs{display:flex;background:var(--bg);border-bottom:1px solid var(--card-border);
+  padding:2px 12px;overflow-x:auto;scrollbar-width:none;flex-wrap:nowrap;flex-shrink:0;align-items:center}
+.page-tabs::-webkit-scrollbar{display:none}
+.ptab{display:flex;height:38px;padding:0 18px;font-size:17px;font-weight:600;
+  color:var(--dim);cursor:pointer;border:1.5px solid transparent;border-radius:8px;
+  align-items:center;gap:4px;white-space:nowrap;flex-shrink:0;transition:all .15s;margin:6px 4px 6px 0}
+.ptab:hover{color:var(--text);border-color:rgba(255,255,255,.15);background:rgba(255,255,255,.06)}
+.ptab.active{color:#000;background:var(--gold);border-color:var(--gold);font-weight:700}
+.ptab-count{font-size:10px;font-weight:700;padding:1px 5px;border-radius:8px}
+.ptab-count.err{background:rgba(255,69,58,.2);color:#ff6b63}
+.ptab-count.ok{background:rgba(48,209,88,.2);color:#30d158}
+.ptab-count.warn{background:rgba(255,159,10,.2);color:#ff9f0a}
+
+/* CONTENT */
+.content-split{display:flex;flex-direction:column;overflow:visible}
+.content-left{flex:1;overflow:visible;padding:14px 16px 32px}
+.content-right{display:none;width:100%;flex-direction:column}
+.content-right.mobile-visible{display:flex}
+.content-left.mobile-hidden{display:none}
+.map-title-bar{padding:12px 18px;font-size:10px;font-weight:700;color:var(--dim);
+  text-transform:uppercase;letter-spacing:.1em;background:var(--bg2);
+  display:flex;align-items:center;gap:6px;flex-shrink:0;border-bottom:1px solid var(--card-border)}
+.map-wrap{padding:0 16px 16px;flex:1}
+#map{height:calc(100dvh - 180px);min-height:320px;border-radius:14px;overflow:hidden}
+.page{display:none}.page.active{display:block}
+
+/* CARDS */
+.card{background:var(--card-bg);border-radius:14px;border:1px solid var(--card-border);
+  margin-bottom:10px;overflow:hidden}
+.card-header{padding:14px 16px 8px;border-bottom:1px solid var(--card-border);display:flex;align-items:center;gap:10px}
+.ch-icon{font-size:18px}
+.ch-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--dim);flex:1}
+.ch-title-xl{font-size:22px;text-transform:none;font-weight:700;letter-spacing:-.4px;color:var(--text);flex:1}
+.ch-title-hotel{font-size:16px;text-transform:none;font-weight:700;letter-spacing:-.3px;color:var(--text);flex:1;line-height:1.2}
+.card-body{padding:0 16px 14px 36px}
+.card-entity-name{font-size:20px;font-weight:700;color:var(--text);margin-top:5px;line-height:1.2;letter-spacing:-.3px}
+
+/* TIMELINE */
+.timeline{position:relative;padding-left:36px}
+.timeline::before{content:'';position:absolute;left:14px;top:0;bottom:0;width:1px;background:rgba(255,255,255,.1)}
+.tl-item{position:relative;margin-bottom:16px;padding-left:4px}
+.tl-item:last-child{margin-bottom:0}
+.tl-dot{position:absolute;left:-25px;top:4px;width:12px;height:12px;border-radius:50%;border:2px solid var(--card-bg);background:var(--dim)}
+.tl-dot.red{background:var(--red);box-shadow:0 0 0 2px rgba(255,69,58,.25)}
+.tl-dot.green{background:var(--green);box-shadow:0 0 0 2px rgba(48,209,88,.2)}
+.tl-dot.blue{background:var(--blue);box-shadow:0 0 0 2px rgba(90,171,255,.2)}
+.tl-dot.amber{background:var(--amber);box-shadow:0 0 0 2px rgba(255,159,10,.2)}
+.tl-day-header{font-size:20px;font-weight:800;text-transform:none;letter-spacing:-.3px;
+  color:var(--gold);margin:22px 0 10px -36px;padding:0 0 8px 4px;
+  border-bottom:.5px solid rgba(255,255,255,.12)}
+.tl-day-header:first-child{margin-top:8px}
+.tl-day-sub{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;margin-top:1px}
+.tl-main{font-size:17px;font-weight:600;line-height:1.3;color:var(--text)}
+.tl-sub{font-size:15px;color:var(--dim);margin-top:4px;line-height:1.5}
+.tl-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+.tag{font-family:monospace;font-size:11px;padding:2px 7px;border-radius:5px;font-weight:500}
+.tag-blue{background:rgba(90,171,255,.12);color:var(--blue)}
+.tag-green{background:rgba(48,209,88,.1);color:var(--green)}
+.tl-stay{border-left:2px solid var(--blue);background:rgba(90,171,255,.07);border-radius:0 8px 8px 0;padding:8px 12px;margin-top:5px}
+
+/* FLIGHTS */
+.flight-row{padding:12px 0;border-bottom:.5px solid var(--card-border)}
+.flight-row:last-child{border-bottom:none}
+.fr-head{display:flex;align-items:center;gap:7px;margin-bottom:8px;flex-wrap:wrap}
+.airline-pill{display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:14px;font-size:12px;font-weight:700;color:#fff}
+.pax-chip{display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.08);border-radius:10px;padding:3px 8px;font-size:12px;font-weight:500;color:var(--text)}
+.pax-dot{width:13px;height:13px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff}
+
+.fr-chip{font-family:monospace;font-size:13px;font-weight:700;padding:3px 9px;border-radius:8px;white-space:nowrap}
+.fr-pax-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;margin-bottom:4px}
+.fr-route{display:flex;align-items:center;gap:8px}
+.fr-city{min-width:65px}
+.fr-iata{font-size:28px;font-weight:800;letter-spacing:-1px;line-height:1;color:var(--text)}
+.fr-name{font-size:12px;color:var(--dim);text-transform:uppercase;letter-spacing:.03em}
+.fr-time{font-size:21px;font-weight:600;margin-top:2px;color:var(--text)}
+.fr-date{font-size:11px;color:var(--muted)}
+.fr-date-hdr{font-size:22px;font-weight:800;letter-spacing:-.4px;color:var(--gold);margin-bottom:0;line-height:1.1}
+.card-date-bar{display:flex;align-items:center;gap:10px;padding:10px 16px 10px 4px;border-bottom:.5px solid rgba(255,255,255,.10)}
+.card-map-row{display:flex;gap:14px;align-items:stretch}
+@media(max-width:767px){
+  .card-map-row{flex-direction:column}
+  .card-map-row>div:last-child{width:100%!important;min-height:220px}
+}
+.flight-row .fr-date-hdr{margin-left:-36px;padding-left:4px;margin-bottom:16px}
+.fr-mid{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:0 6px}
+.fr-line-wrap{width:100%;position:relative;height:14px}
+.fr-line{position:absolute;left:0;right:0;top:50%;height:.5px;background:rgba(255,255,255,.15)}
+.fr-plane{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:13px;background:var(--card-bg);padding:0 4px}
+.fr-dur{font-size:13px;color:var(--dim);font-weight:500}
+.booking-tag{font-family:monospace;font-size:14px;color:var(--blue);background:rgba(90,171,255,.1);padding:3px 8px;border-radius:5px;display:inline-block;font-weight:600}
+.badge{display:inline-flex;align-items:center;gap:2px;padding:3px 9px;border-radius:12px;font-size:13px;font-weight:600}
+.badge-green{background:rgba(48,209,88,.15);color:var(--green)}
+.badge-red{background:rgba(255,69,58,.15);color:var(--red)}
+.badge-amber{background:rgba(255,159,10,.15);color:var(--amber)}
+
+/* HOTELS */
+.hotel-missing{background:rgba(255,69,58,.08);border:1.5px dashed rgba(255,69,58,.3);border-radius:12px;padding:18px;text-align:center}
+.info-row{display:flex;justify-content:space-between;padding:11px 0;border-bottom:.5px solid var(--card-border);font-size:16px}
+.info-row:last-child{border-bottom:none}
+.info-lbl{color:var(--dim)}
+.info-val{font-weight:500;text-align:right;max-width:65%;color:var(--text)}
+.mono{font-family:monospace;font-size:13px;color:var(--blue);font-weight:600}
+
+/* DOCS */
+.doc-row{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:.5px solid var(--card-border)}
+.doc-row:last-child{border-bottom:none}
+.doc-icon{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.doc-title{font-size:17px;font-weight:600;color:var(--text)}
+.doc-sub{font-size:14px;color:var(--dim);margin-top:2px;line-height:1.4}
+.doc-right{margin-left:auto}
+
+/* CHECKLIST */
+.check-row{display:flex;align-items:flex-start;gap:12px;padding:11px 0;border-bottom:.5px solid var(--card-border);cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent}
+.check-row:last-child{border-bottom:none}
+.check-circle{width:22px;height:22px;border-radius:50%;border:2px solid rgba(255,255,255,.2);flex-shrink:0;transition:all .2s;display:flex;align-items:center;justify-content:center;font-size:12px;color:transparent}
+.check-circle.done{background:var(--green);border-color:var(--green);color:#fff}
+.check-title{font-size:17px;font-weight:400;transition:color .2s;line-height:1.35;color:var(--text)}
+.check-row.done .check-title{color:var(--muted);text-decoration:line-through}
+
+/* WARNINGS */
+.warn-row{padding:12px 14px;border-radius:10px;border-left:3px solid;font-size:15px;line-height:1.55;margin-bottom:8px;color:var(--text)}
+.warn-row:last-child{margin-bottom:0}
+.warn-row.red{border-color:var(--red);background:rgba(255,69,58,.1)}
+.warn-row.amber{border-color:var(--amber);background:rgba(255,159,10,.1)}
+.warn-row.blue{border-color:var(--blue);background:rgba(90,171,255,.08)}
+.warn-row strong{display:flex;align-items:center;margin-bottom:4px}
+
+/* BUDGET */
+.budget-row{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:.5px solid var(--card-border);font-size:16px;color:var(--text)}
+.budget-row:last-child{border-bottom:none}
+
+/* RESTAURANTS */
+.rest-map{height:200px;border-radius:10px;overflow:hidden;margin-top:14px;border:.5px solid var(--card-border)}
+.rest-addr{font-size:11px;color:var(--dim);margin-bottom:8px;line-height:1.4}
+
+::-webkit-scrollbar{width:0;height:0}
+
+/* DESKTOP */
+@media(min-width:768px){
+  html,body{height:100%;overflow:hidden}
+  body{font-size:14px;flex-direction:column;background:var(--bg)}
+  .main-area{display:grid;grid-template-rows:auto auto auto 1fr;height:100vh;overflow:hidden}
+  .topbar{padding:24px 32px 0;flex-direction:row;align-items:flex-end;min-height:auto;gap:24px;border-bottom:none}
+  .trip-title{font-size:52px;letter-spacing:-1.5px}
+  .trip-period{font-size:13px;padding-bottom:12px;align-self:flex-end;margin-left:4px}
+  .hero-countdown{align-self:flex-end;padding-bottom:12px;font-size:12px}
+  .stats-row{padding:12px 32px;gap:10px;border-bottom:1px solid var(--card-border)}
+  .stat{padding:10px 18px}
+  .ios-nav{display:none!important}
+  .page-tabs{display:flex;padding:0 28px}
+  .content-left{padding-bottom:16px!important}
+  .ptab{height:36px;font-size:16px;padding:0 18px;margin:5px 4px 5px 0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+  .content-split{display:grid;grid-template-columns:1fr 40%;height:100%;overflow:hidden}
+  .content-left{overflow-y:auto;padding:16px 20px;min-width:0;padding-bottom:16px}
+  .content-right{display:flex;flex-direction:column;height:100%;border-left:1px solid var(--card-border);overflow:hidden}
+  .content-left.mobile-hidden{display:block}
+  .map-wrap{flex:1;min-height:0;overflow:hidden;position:relative;padding:0}
+  #map{position:absolute;top:12px;left:0;bottom:12px;right:16px;border-radius:10px;min-height:0;height:auto}
+  .card{border-radius:10px;margin-bottom:8px}
+  .card-header{padding:10px 14px}
+  .card-body{padding:0 14px 12px 32px}
+  .tl-main{font-size:15px}
+  .tl-sub{font-size:14px}
+  .tl-day-header{font-size:18px;margin-left:-32px}
+  .fr-iata{font-size:24px}
+  .fr-date-hdr{font-size:20px}
+  .flight-row .fr-date-hdr{margin-left:-32px;padding-left:4px}
+  .card-date-bar{padding-left:0}
+  .fr-time{font-size:18px}
+  .fr-plane{background:var(--card-bg)}
+  .fr-line{background:rgba(255,255,255,.12)}
+  .info-row{font-size:15px}
+  .doc-title{font-size:15px}
+  .doc-sub{font-size:13px}
+  .check-title{font-size:15px}
+  .budget-row{font-size:15px}
+  .warn-row{font-size:14px}
+  .rest-map{height:180px;border-radius:8px}
+}
+</style>
+<style>:root{--accent:#0077b6}</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sb-nav">
+    <div class="sb-item active" onclick="showPage('resumen',this)">
+      <span class="sb-label">Resumen</span>
+    </div>
+    <div class="sb-divider"></div>
+    <div class="sb-section-lbl">Este viaje</div>
+    <div class="sb-item" onclick="showPage('vuelos',this)">
+      <span class="sb-label">Transporte</span>
+      <span class="sb-badge-g">9</span>
+    </div>
+    <div class="sb-item" onclick="showPage('hoteles',this)">
+      <span class="sb-label">Hoteles</span>
+      <span class="sb-badge">!</span>
+    </div>
+    <div class="sb-item" onclick="showPage('restaurantes',this)">
+      <span class="sb-label">Restaurantes</span>
+      
+    </div>
+    <div class="sb-item" onclick="showPage('actividades',this)">
+      <span class="sb-label">Actividades</span>
+      
+    </div>
+    <div class="sb-item" onclick="showPage('checklist',this)" style="display:none">
+      <span class="sb-label">Checklist</span>
+      <span class="sb-badge-a">10</span>
+    </div>
+    <div class="sb-item" onclick="showPage('presupuesto',this)">
+      <span class="sb-label">Presupuesto</span>
+    </div>
+    <div class="sb-item" onclick="showPage('documentos',this)">
+      <span class="sb-label">Documentos</span>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main-area">
+
+  <div class="topbar">
+    <span style="position:absolute;top:10px;right:14px;display:flex;gap:5px;align-items:center;font-family:Inter,sans-serif">
+      <span style="background:#FF3B30;color:#000;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;line-height:1.4">Última actualización: 17 Aug 2026 17:34</span>
+    </span>
+    <div class="trip-title">Vero Julio 2026</div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat">
+      <div class="stat-lbl">Fechas</div>
+      <div class="stat-val" style="font-size:16px">8 Jul – 21 Jul</div>
+      <div class="stat-sub">13 días</div>
+    </div>
+    <div class="stat">
+      <div class="stat-lbl">Días para partir</div>
+      <div class="stat-val" style="color:var(--dim)">Pasado</div>
+    </div>
+    <div class="stat">
+      <div class="stat-lbl">Días para cancelar</div>
+      <div class="stat-val" style="color:var(--dim)">Pasado</div>
+      <div class="stat-sub" style="margin-top:2px">8 Jul</div>
+      <div class="stat-sub" style="margin-top:2px;color:var(--red);font-weight:700">⚠️ 1 hotel sin fecha</div>
+    </div>
+  </div>
+
+  <div class="page-tabs">
+    <div class="ptab active" onclick="showPage('resumen',this)">Resumen</div>
+    <div class="ptab" onclick="showPage('vuelos',this)">Transporte <span class="ptab-count ok">9</span></div>
+    <div class="ptab" onclick="showPage('hoteles',this)">Hoteles <span class="ptab-count err">!</span></div>
+    <div class="ptab" onclick="showPage('restaurantes',this)">Restaurantes </div>
+    <div class="ptab" onclick="showPage('actividades',this)">Actividades </div>
+    <div class="ptab" onclick="showPage('presupuesto',this)">Presupuesto</div>
+    <div class="ptab" onclick="showPage('documentos',this)">Documentos <span class="ptab-count ok">18</span></div>
+    <div class="ptab mobile-map-tab" style="display:none" onclick="showPage('mapa',this)">🗺 Mapa</div>
+  </div>
+
+  <div class="content-split">
+    <div class="content-left">
+      <div id="page-resumen" class="page active">
+<div class="card"><div class="card-header"><span class="ch-icon">⚠️</span><span class="ch-title">Advertencias e inconsistencias</span></div><div class="card-body"><div style="background:#ffd60a;color:#000;border-radius:10px;padding:10px 14px;margin-bottom:8px;font-size:14px;font-weight:500;border-left:3px solid #b8860b"><strong style="display:block;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;color:#7a5c00">⚠ CAMBIO ALOJAMIENTO</strong>Hotel en Madrid (9-13 Jul) cambiado: Room Mate Collection Alba (res. ••••••••99) cancelada sin costo el 5 Jul — reemplazada por Nômade Temple Madrid (Standard Room, 2 adultos, €1.425,60, cancelación gratis hasta 8 Jul 18:00).</div><div style="background:#ffd60a;color:#000;border-radius:10px;padding:10px 14px;margin-bottom:8px;font-size:14px;font-weight:500;border-left:3px solid #b8860b"><strong style="display:block;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;color:#7a5c00">⚠ CAMBIO VUELO</strong>⚠ CAMBIO DE VUELO: Veronica viaja en LA706 el 8 Jul 19:00 (llega MAD 9 Jul). Olivia y José vuelan el 12 Jul en LA708/IB6652. Veronica llega 4 días antes — itinerario separado hasta el 13 Jul.</div><div style="background:#ffd60a;color:#000;border-radius:10px;padding:10px 14px;margin-bottom:8px;font-size:14px;font-weight:500;border-left:3px solid #b8860b"><strong style="display:block;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;color:#7a5c00">⚠ SIN VUELTA</strong>Sin vuelo de vuelta a Chile registrado para JOSE RODRIGUEZ CANO MENDEZ ni MATILDE RODRIGUEZ CANO MENDEZ. Jose tiene un vuelo BCN→GRU→NAT (Natal, Brasil) el 20 Jul (booking ••••KM), no una vuelta a Santiago. Matilde solo tiene la IDA (SCL→MAD→NCE). Confirmar si viajan de vuelta con Veronica/Olivia (LA707 21 Jul) u otro vuelo.</div><div style="background:#ffd60a;color:#000;border-radius:10px;padding:10px 14px;margin-bottom:8px;font-size:14px;font-weight:500;border-left:3px solid #b8860b"><strong style="display:block;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;color:#7a5c00">⛔ SIN ALOJAMIENTO</strong>Sin alojamiento noche 20 Jul en Madrid: checkout Barcelona 20 Jul 12:00, vuelo LA707 desde MAD 21 Jul 13:15. Hotel en Madrid sin reservar.</div><div style="background:#ffd60a;color:#000;border-radius:10px;padding:10px 14px;margin-bottom:8px;font-size:14px;font-weight:500;border-left:3px solid #b8860b"><strong style="display:block;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;color:#7a5c00">⚠ SIN TRANSPORTE</strong>Sin transporte Barcelona → Madrid. Necesario llegar a MAD antes del 21 Jul 13:15 para vuelo LA707 (tren AVE ~2h30 o vuelo, salir 20 Jul).</div><div style="background:#ffd60a;color:#000;border-radius:10px;padding:10px 14px;margin-bottom:8px;font-size:14px;font-weight:500;border-left:3px solid #b8860b"><strong style="display:block;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;color:#7a5c00">⚠ INCONSISTENCIA</strong>Pasajeros sin pasaporte registrado: JOSE RODRIGUEZ CANO MENDEZ y MATILDE RODRIGUEZ CANO MENDEZ (viaje internacional).</div></div></div>
+<div class="card">
+  <div class="card-header" style="justify-content:center"><span class="ch-title-xl" style="flex:none;text-align:center;color:var(--gold)">Cronograma</span></div>
+  <div class="card-body"><div class="tl-day-header">Mié 8 Jul 2026</div><div class="timeline">
+<div class="tl-item">
+  <div class="tl-dot blue"></div>
+  <div class="tl-main" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+    <span>IDA ✈ &nbsp;SCL → MAD</span>
+    <div style="display:flex;flex-wrap:wrap;gap:4px"><span style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,.07);border:1px solid #6366f140;border-radius:20px;padding:2px 8px 2px 4px;font-size:11px;color:var(--fg)"><span style="width:16px;height:16px;border-radius:50%;background:#6366f1;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#000">V</span>Veronica</span></div>
+  </div>
+  <div class="tl-sub"><span style="font-weight:700;color:var(--accent,#007AFF);font-size:12px">LA706</span> · SCL 19:00 → MAD 13:55 <span style="background:#FF3B30;color:#000;font-size:10px;font-weight:700;padding:1px 5px;border-radius:4px;vertical-align:middle">+1 día</span></div>
+  <div class="tl-tags"><span class="tag tag-blue">••••OH</span></div>
+</div></div><div class="tl-day-header">Jue 9 Jul 2026</div><div class="timeline">
+<div class="tl-item">
+  <div class="tl-dot green"></div>
+  <div class="tl-main">🛬 Check-in Madrid</div>
+  <div class="tl-stay">
+  <div style="font-size:11px;font-weight:600;color:var(--blue)">🏨 Nômade Temple Madrid</div>
+  <div style="font-size:10px;color:#1e40af;margin-top:2px">Check-in · 15:00 · 4 noches</div>
+</div>
+</div></div><div class="tl-day-header">Dom 12 Jul 2026</div><div class="timeline">
+<div class="tl-item">
+  <div class="tl-dot blue"></div>
+  <div class="tl-main" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+    <span>IDA ✈ &nbsp;Santiago (SCL) → Madrid (MAD)</span>
+    <div style="display:flex;flex-wrap:wrap;gap:4px"><span style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,.07);border:1px solid #e879f940;border-radius:20px;padding:2px 8px 2px 4px;font-size:11px;color:var(--fg)"><span style="width:16px;height:16px;border-radius:50%;background:#e879f9;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#000">O</span>Olivia</span></div>
+  </div>
+  <div class="tl-sub"><span style="font-weight:700;color:var(--accent,#007AFF);font-size:12px">LA 708</span> · Santiago (SCL) 16:05 → Madrid (MAD) 11:00 <span style="background:#FF3B30;color:#000;font-size:10px;font-weight:700;padding:1px 5px;border-radius:4px;vertical-align:middle">+1 día</span><br>Asientos 22C</div>
+  <div class="tl-tags"><span class="tag tag-blue">••••PW</span></div>
+</div>
+<div class="tl-item">
+  <div class="tl-dot blue"></div>
+  <div class="tl-main" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+    <span>IDA ✈ &nbsp;SCL → MAD</span>
+    <div style="display:flex;flex-wrap:wrap;gap:4px"><span style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,.07);border:1px solid #10b98140;border-radius:20px;padding:2px 8px 2px 4px;font-size:11px;color:var(--fg)"><span style="width:16px;height:16px;border-radius:50%;background:#10b981;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#000">J</span>Jose</span></div>
+  </div>
+  <div class="tl-sub"><span style="font-weight:700;color:var(--accent,#007AFF);font-size:12px">IB6652</span> · SCL 16:05 → MAD 11:00 <span style="background:#FF3B30;color:#000;font-size:10px;font-weight:700;padding:1px 5px;border-radius:4px;vertical-align:middle">+1 día</span></div>
+  <div class="tl-tags"><span class="tag tag-blue">•••62</span></div>
+</div></div><div class="tl-day-header">Lun 13 Jul 2026</div><div class="timeline">
+<div class="tl-item">
+  <div class="tl-dot green"></div>
+  <div class="tl-main">🛫 Check-out Madrid</div>
+  <div class="tl-stay">
+  <div style="font-size:11px;font-weight:600;color:var(--blue)">🏨 Nômade Temple Madrid</div>
+  <div style="font-size:10px;color:#1e40af;margin-top:2px">Check-out · 12:00</div>
+</div>
+</div>
+<div class="tl-item">
+  <div class="tl-dot blue"></div>
+  <div class="tl-main" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+    <span>IDA ✈ &nbsp;MAD → NCE</span>
+    <div style="display:flex;flex-wrap:wrap;gap:4px"><span style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,.07);border:1px solid #6366f140;border-radius:20px;padding:2px 8px 2px 4px;font-size:11px;color:var(--fg)"><span style="width:16px;height:16px;border-radius:50%;background:#6366f1;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#000">V</span>Veronica</span><span style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,.07);border:1px solid #e879f940;border-radius:20px;padding:2px 8px 2px 4px;font-size:11px;color:var(--fg)"><span style="width:16px;height:16px;border-radius:50%;background:#e879f9;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#000">O</span>Olivia</span><span style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,.07);border:1px solid #f59e0b40;border-radius:20px;padding:2px 8px 2px 4px;font-size:11px;color:var(--fg)"><span style="width:16px;height:16px;border-radius:50%;background:#f59e0b;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#000">M</span>Matilde</span><span style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,.07);border:1px solid #10b98140;border-radius:20px;padding:2px 8px 2px 4px;font-size:11px;color:var(--fg)"><span style="width:16px;height:16px;border-radius:50%;background:#10b981;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#000">J</span>Jose</span></div>
+  </div>
+  <div class="tl-sub"><span style="font-weight:700;color:var(--accent,#007AFF);font-size:12px">IB1213</span> · MAD 16:20 → NCE 18:15<br>Asientos pendientes de selección</div>
+  <div class="tl-tags"><span class="tag tag-blue">•••M6</span></div>
+</div>
+<div class="tl-item">
+  <div class="tl-dot green"></div>
+  <div class="tl-main">🛬 Check-in Niza</div>
+  <div class="tl-stay">
+  <div style="font-size:11px;font-weight:600;color:var(--blue)">🏨 Palais Saleya Boutique Hôtel</div>
+  <div style="font-size:10px;color:#1e40af;margin-top:2px">Check-in · 15:00 · 2 noches</div>
+</div>
+</div></div><div class="tl-day-header">Mié 15 Jul 2026</div><div class="timeline">
+<div class="tl-item">
+  <div class="tl-dot amber"></div>
+  <div class="tl-main">🚗 Retiro auto · Auto Europe / Sixt</div>
+  <div class="tl-sub">10:00 · Nice Airport, Terminal 2, Nice, Francia</div>
+  <div class="tl-tags"><span class="tag tag-blue">Voucher USB13057577</span></div>
+</div>
+<div class="tl-item">
+  <div class="tl-dot amber"></div>
+  <div class="tl-main">🚆 Renta de auto &nbsp;Nice Airport, Terminal 2, Nice, France → Barcelona El Poble-Sec, Carrer Palaudí Ries, 5-7, Barcelona, Spain</div>
+  <div class="tl-sub">Nice Airport, Terminal 2, Nice, France 10:00 → Barcelona El Poble-Sec, Carrer Palaudí Ries, 5-7, Barcelona, Spain</div>
+  <div class="tl-tags"><span class="tag tag-blue">US813057577</span></div>
+</div>
+<div class="tl-item">
+  <div class="tl-dot red"></div>
+  <div class="tl-main">⚠ Falta transporte</div>
+  <div class="tl-stay" style="border-color:var(--red);background:var(--red-light)">
+    <div style="font-size:11px;font-weight:600;color:var(--red)">🚫 Niza → Nîmes · sin transporte reservado</div>
+  </div>
+</div>
+<div class="tl-item">
+  <div class="tl-dot green"></div>
+  <div class="tl-main">🛫 Check-out Niza</div>
+  <div class="tl-stay">
+  <div style="font-size:11px;font-weight:600;color:var(--blue)">🏨 Palais Saleya Boutique Hôtel</div>
+  <div style="font-size:10px;color:#1e40af;margin-top:2px">Check-out · 12:00</div>
+</div>
+</div>
+<div class="tl-item">
+  <div class="tl-dot green"></div>
+  <div class="tl-main">🛬 Check-in Nîmes</div>
+  <div class="tl-stay">
+  <div style="font-size:11px;font-weight:600;color:var(--blue)">🏨 Margaret - Hôtel Chouleur</div>
+  <div style="font-size:10px;color:#1e40af;margin-top:2px">Check-in · 15:00 · 2 noches</div>
+</div>
+</div></div><div class="tl-day-header">Vie 17 Jul 2026</div><div class="timeline">
+<div class="tl-item">
+  <div class="tl-dot green"></div>
+  <div class="tl-main">🛫 Check-out Nîmes</div>
+  <div class="tl-stay">
+  <div style="font-size:11px;font-weight:600;color:var(--blue)">🏨 Margaret - Hôtel Chouleur</div>
+  <div style="font-size:10px;color:#1e40af;margin-top:2px">Check-out · 11:00</div>
+</div>
+</div>
+<div class="tl-item">
+  <div class="tl-dot red"></div>
+  <div class="tl-main">⚠ Falta transporte</div>
+  <div class="tl-stay" style="border-color:var(--red);background:var(--red-light)">
+    <div style="font-size:11px;font-weight:600;color:var(--red)">🚫 Nîmes → Cadaqués · sin transporte reservado</div>
+  </div>
+</div>
+<div class="tl-item">
+  <div class="tl-dot green"></div>
+  <div class="tl-main">🛬 Check-in Cadaqués</div>
+  <div class="tl-stay">
+  <div style="font-size:11px;font-weight:600;color:var(--blue)">🏨 Gaia Apartments &amp; Lofts Cadaqués</div>
+  <div style="font-size:10px;color:#1e40af;margin-top:2px">Check-in · 16:00 · 1 noche</div>
+</div>
+</div></div><div class="tl-day-header">Sáb 18 Jul 2026</div><div class="timeline">
+<div class="tl-item">
+  <div class="tl-dot green"></div>
+  <div class="tl-main">🛫 Check-out Cadaqués</div>
+  <div class="tl-stay">
+  <div style="font-size:11px;font-weight:600;color:var(--blue)">🏨 Gaia Apartments &amp; Lofts Cadaqués</div>
+  <div style="font-size:10px;color:#1e40af;margin-top:2px">Check-out · 11:00</div>
+</div>
+</div>
+<div class="tl-item">
+  <div class="tl-dot red"></div>
+  <div class="tl-main">⚠ Falta transporte</div>
+  <div class="tl-stay" style="border-color:var(--red);background:var(--red-light)">
+    <div style="font-size:11px;font-weight:600;color:var(--red)">🚫 Cadaqués → Barcelona · sin transporte reservado</div>
+  </div>
+</div>
+<div class="tl-item">
+  <div class="tl-dot green"></div>
+  <div class="tl-main">🛬 Check-in Barcelona</div>
+  <div class="tl-stay">
+  <div style="font-size:11px;font-weight:600;color:var(--blue)">🏨 Hotel Casa Luz</div>
+  <div style="font-size:10px;color:#1e40af;margin-top:2px">Check-in · 15:00 · 2 noches</div>
+</div>
+</div>
+<div class="tl-item">
+  <div class="tl-dot amber"></div>
+  <div class="tl-main">🚗 Entrega auto · Auto Europe / Sixt</div>
+  <div class="tl-sub">22:00 · Barcelona El Poble-Sec, Carrer Palaudrí Res, 5-7, Barcelona, España</div>
+  <div class="tl-tags"><span class="tag tag-blue">Voucher USB13057577</span></div>
+</div></div><div class="tl-day-header">Lun 20 Jul 2026</div><div class="timeline">
+<div class="tl-item">
+  <div class="tl-dot red"></div>
+  <div class="tl-main">⚠ Falta transporte</div>
+  <div class="tl-stay" style="border-color:var(--red);background:var(--red-light)">
+    <div style="font-size:11px;font-weight:600;color:var(--red)">🚫 Barcelona → Madrid · sin transporte reservado</div>
+  </div>
+</div>
+<div class="tl-item">
+  <div class="tl-dot green"></div>
+  <div class="tl-main">🛫 Check-out Barcelona</div>
+  <div class="tl-stay">
+  <div style="font-size:11px;font-weight:600;color:var(--blue)">🏨 Hotel Casa Luz</div>
+  <div style="font-size:10px;color:#1e40af;margin-top:2px">Check-out · 12:00</div>
+</div>
+</div>
+<div class="tl-item">
+  <div class="tl-dot blue"></div>
+  <div class="tl-main" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+    <span>IDA ✈ &nbsp;BCN → GRU</span>
+    <div style="display:flex;flex-wrap:wrap;gap:4px"><span style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,.07);border:1px solid #10b98140;border-radius:20px;padding:2px 8px 2px 4px;font-size:11px;color:var(--fg)"><span style="width:16px;height:16px;border-radius:50%;background:#10b981;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#000">J</span>Jose</span></div>
+  </div>
+  <div class="tl-sub"><span style="font-weight:700;color:var(--accent,#007AFF);font-size:12px">LA8115</span> · BCN 13:10 → GRU 19:10</div>
+  <div class="tl-tags"><span class="tag tag-blue">••••KM</span></div>
+</div>
+<div class="tl-item">
+  <div class="tl-dot red"></div>
+  <div class="tl-main">📍 Madrid, España</div>
+  <div class="tl-stay" style="border-color:var(--red);background:var(--red-light)">
+  <div style="font-size:11px;font-weight:600;color:var(--red)">⛔ Hotel en Madrid — Sin reservar</div>
+  <div style="font-size:10px;color:#b91c1c;margin-top:2px">1 noche</div>
+</div>
+</div>
+<div class="tl-item">
+  <div class="tl-dot blue"></div>
+  <div class="tl-main" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+    <span>IDA ✈ &nbsp;GRU → NAT</span>
+    <div style="display:flex;flex-wrap:wrap;gap:4px"><span style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,.07);border:1px solid #10b98140;border-radius:20px;padding:2px 8px 2px 4px;font-size:11px;color:var(--fg)"><span style="width:16px;height:16px;border-radius:50%;background:#10b981;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#000">J</span>Jose</span></div>
+  </div>
+  <div class="tl-sub"><span style="font-weight:700;color:var(--accent,#007AFF);font-size:12px">LA3444</span> · GRU 22:25 → NAT 01:40 <span style="background:#FF3B30;color:#000;font-size:10px;font-weight:700;padding:1px 5px;border-radius:4px;vertical-align:middle">+1 día</span></div>
+  <div class="tl-tags"><span class="tag tag-blue">••••KM</span></div>
+</div></div><div class="tl-day-header">Mar 21 Jul 2026</div><div class="timeline">
+<div class="tl-item">
+  <div class="tl-dot red"></div>
+  <div class="tl-main" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+    <span>VUELTA ✈ &nbsp;Madrid → Santiago de Chile</span>
+    <div style="display:flex;flex-wrap:wrap;gap:4px"><span style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,.07);border:1px solid #6366f140;border-radius:20px;padding:2px 8px 2px 4px;font-size:11px;color:var(--fg)"><span style="width:16px;height:16px;border-radius:50%;background:#6366f1;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#000">V</span>Veronica</span><span style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,.07);border:1px solid #6366f140;border-radius:20px;padding:2px 8px 2px 4px;font-size:11px;color:var(--fg)"><span style="width:16px;height:16px;border-radius:50%;background:#6366f1;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#000">O</span>Olivia</span></div>
+  </div>
+  <div class="tl-sub"><span style="font-weight:700;color:var(--accent,#007AFF);font-size:12px">LA 707</span> · Madrid 13:15 → Santiago de Chile 20:35<br>Asientos 24A</div>
+  <div class="tl-tags"><span class="tag tag-blue">••••OH</span></div>
+</div>
+<div class="tl-item">
+  <div class="tl-dot red"></div>
+  <div class="tl-main" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+    <span>VUELTA ✈ &nbsp;Madrid (MAD) → Santiago (SCL)</span>
+    <div style="display:flex;flex-wrap:wrap;gap:4px"><span style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,.07);border:1px solid #e879f940;border-radius:20px;padding:2px 8px 2px 4px;font-size:11px;color:var(--fg)"><span style="width:16px;height:16px;border-radius:50%;background:#e879f9;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#000">O</span>Olivia</span></div>
+  </div>
+  <div class="tl-sub"><span style="font-weight:700;color:var(--accent,#007AFF);font-size:12px">LA 707</span> · Madrid (MAD) 13:15 → Santiago (SCL) 20:35<br>Asientos 24C</div>
+  <div class="tl-tags"><span class="tag tag-blue">••••PW</span></div>
+</div></div></div>
+</div></div>
+      <div id="page-vuelos" class="page">
+<div class="card" style="margin-bottom:20px">
+  <div class="card-body">
+    <div class="flight-row">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+        <div class="fr-date-hdr" style="margin-bottom:0">Mié 8 Jul 2026</div>
+        
+      </div>
+      <div class="fr-head">
+        <div class="airline-pill" style="background:var(--blue)">LATAM</div>
+        <span class="fr-chip" style="background:rgba(90,171,255,.15);color:var(--blue)">LA706</span>
+        <span class="fr-chip" style="background:rgba(48,209,88,.12);color:var(--green)">Economy</span>
+        <span class="fr-chip" style="background:rgba(212,168,67,.15);color:var(--gold)">••••OH</span>
+        <span class="fr-chip" style="background:rgba(255,159,10,.15);color:var(--amber);margin-left:auto">T2 Salida</span>
+      </div>
+      <div class="fr-route">
+        <div class="fr-city">
+          <div class="fr-iata">SCL</div>
+          <div class="fr-time">19:00</div>
+        </div>
+        <div class="fr-mid">
+          <div class="fr-dur">Economy</div>
+          <div class="fr-line-wrap"><div class="fr-line"></div><span class="fr-plane">✈</span></div>
+          <div class="fr-dur">LA706 · Directo</div>
+        </div>
+        <div class="fr-city" style="text-align:right">
+          <div class="fr-iata">MAD</div>
+          <div class="fr-time">13:55 <span style="background:#FF3B30;color:#000;font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;vertical-align:middle">+1 día</span></div>
+          <div style="font-size:12px;color:var(--dim)">Jue 9 Jul 2026</div>
+        </div>
+      </div>
+      
+      <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;align-items:center"><span class="booking-tag">•••••••••••FR</span></div>
+    </div>
+  </div>
+</div>
+<div class="card" style="margin-bottom:20px">
+  <div class="card-body">
+    <div class="flight-row">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+        <div class="fr-date-hdr" style="margin-bottom:0">Dom 12 Jul 2026</div>
+        <div class="fr-pax-row" style="margin-top:0;margin-bottom:0"><div class="pax-chip"><div class="pax-dot" style="background:#e879f9">O</div> Olivia</div></div>
+      </div>
+      <div class="fr-head">
+        <div class="airline-pill" style="background:var(--blue)">LATAM</div>
+        <span class="fr-chip" style="background:rgba(90,171,255,.15);color:var(--blue)">LA 708</span>
+        <span class="fr-chip" style="background:rgba(48,209,88,.12);color:var(--green)">Economy</span>
+        <span class="fr-chip" style="background:rgba(212,168,67,.15);color:var(--gold)">••••PW</span>
+        <span class="fr-chip" style="background:rgba(255,159,10,.15);color:var(--amber);margin-left:auto">T2 Salida</span>
+      </div>
+      <div class="fr-route">
+        <div class="fr-city">
+          <div class="fr-iata">Santiago (SCL)</div>
+          <div class="fr-time">16:05</div>
+        </div>
+        <div class="fr-mid">
+          <div class="fr-dur">Economy</div>
+          <div class="fr-line-wrap"><div class="fr-line"></div><span class="fr-plane">✈</span></div>
+          <div class="fr-dur">LA 708 · Directo</div>
+        </div>
+        <div class="fr-city" style="text-align:right">
+          <div class="fr-iata">Madrid (MAD)</div>
+          <div class="fr-time">11:00 <span style="background:#FF3B30;color:#000;font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;vertical-align:middle">+1 día</span></div>
+          <div style="font-size:12px;color:var(--dim)">Lun 13 Jul 2026</div>
+        </div>
+      </div>
+      <div style="margin-top:6px;display:flex;gap:5px"><span class="booking-tag">Asientos: 22C</span></div>
+      <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;align-items:center"><span style="font-size:11px;font-weight:600;color:var(--green);margin-left:auto">CLP 1.636.970</span></div>
+    </div>
+  </div>
+</div>
+<div class="card" style="margin-bottom:20px">
+  <div class="card-body">
+    <div class="flight-row">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+        <div class="fr-date-hdr" style="margin-bottom:0">Dom 12 Jul 2026</div>
+        <div class="fr-pax-row" style="margin-top:0;margin-bottom:0"><div class="pax-chip"><div class="pax-dot" style="background:#10b981">J</div> Jose</div></div>
+      </div>
+      <div class="fr-head">
+        <div class="airline-pill" style="background:var(--blue)">Iberia (operado por LATAM)</div>
+        <span class="fr-chip" style="background:rgba(90,171,255,.15);color:var(--blue)">IB6652</span>
+        <span class="fr-chip" style="background:rgba(48,209,88,.12);color:var(--green)">Economy</span>
+        <span class="fr-chip" style="background:rgba(212,168,67,.15);color:var(--gold)">•••62</span>
+        <span class="fr-chip" style="background:rgba(255,159,10,.15);color:var(--amber);margin-left:auto">T2 Salida</span>
+      </div>
+      <div class="fr-route">
+        <div class="fr-city">
+          <div class="fr-iata">SCL</div>
+          <div class="fr-time">16:05</div>
+        </div>
+        <div class="fr-mid">
+          <div class="fr-dur">Economy</div>
+          <div class="fr-line-wrap"><div class="fr-line"></div><span class="fr-plane">✈</span></div>
+          <div class="fr-dur">IB6652 · Codeshare LA708</div>
+        </div>
+        <div class="fr-city" style="text-align:right">
+          <div class="fr-iata">MAD</div>
+          <div class="fr-time">11:00 <span style="background:#FF3B30;color:#000;font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;vertical-align:middle">+1 día</span></div>
+          <div style="font-size:12px;color:var(--dim)">Lun 13 Jul 2026</div>
+        </div>
+      </div>
+      
+      
+    </div>
+  </div>
+</div>
+<div class="card" style="margin-bottom:20px">
+  <div class="card-body">
+    <div class="flight-row">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+        <div class="fr-date-hdr" style="margin-bottom:0">Lun 13 Jul 2026</div>
+        <div class="fr-pax-row" style="margin-top:0;margin-bottom:0"><div class="pax-chip"><div class="pax-dot" style="background:#6366f1">V</div> Veronica</div><div class="pax-chip"><div class="pax-dot" style="background:#e879f9">O</div> Olivia</div><div class="pax-chip"><div class="pax-dot" style="background:#f59e0b">M</div> Matilde</div><div class="pax-chip"><div class="pax-dot" style="background:#10b981">J</div> Jose</div></div>
+      </div>
+      <div class="fr-head">
+        <div class="airline-pill" style="background:var(--blue)">Iberia (Air Nostrum)</div>
+        <span class="fr-chip" style="background:rgba(90,171,255,.15);color:var(--blue)">IB1213</span>
+        <span class="fr-chip" style="background:rgba(48,209,88,.12);color:var(--green)">Economy</span>
+        <span class="fr-chip" style="background:rgba(212,168,67,.15);color:var(--gold)">•••M6</span>
+        <span class="fr-chip" style="background:rgba(255,159,10,.15);color:var(--amber);margin-left:auto">T4 Salida</span>
+      </div>
+      <div class="fr-route">
+        <div class="fr-city">
+          <div class="fr-iata">MAD</div>
+          <div class="fr-time">16:20</div>
+        </div>
+        <div class="fr-mid">
+          <div class="fr-dur">Economy</div>
+          <div class="fr-line-wrap"><div class="fr-line"></div><span class="fr-plane">✈</span></div>
+          <div class="fr-dur">IB1213 · Directo</div>
+        </div>
+        <div class="fr-city" style="text-align:right">
+          <div class="fr-iata">NCE</div>
+          <div class="fr-time">18:15</div>
+          
+        </div>
+      </div>
+      <div style="margin-top:6px;display:flex;gap:5px"><span class="booking-tag">Asientos: pendientes de selección</span></div>
+      
+    </div>
+  </div>
+</div>
+<div class="card" style="margin-bottom:20px">
+  <div class="card-body">
+    <div class="flight-row">
+      <div class="fr-date-hdr">Mié 15 Jul 2026</div>
+      <div class="fr-head">
+        <div class="airline-pill" style="background:var(--amber)">🚆 Renta de auto</div>
+        <span class="fr-chip" style="background:rgba(212,168,67,.15);color:var(--gold)">US813057577</span>
+      </div>
+      <div class="fr-route">
+        <div class="fr-city">
+          <div class="fr-iata">Nice Airport, Terminal 2, Nice, France</div>
+          <div class="fr-time">10:00</div>
+        </div>
+        <div class="fr-mid">
+          <div class="fr-dur">·</div>
+          <div class="fr-line-wrap"><div class="fr-line"></div><span class="fr-plane">🚆</span></div>
+          <div class="fr-dur">Renta de auto</div>
+        </div>
+        <div class="fr-city" style="text-align:right">
+          <div class="fr-iata">Barcelona El Poble-Sec, Carrer Palaudí Ries, 5-7, Barcelona, Spain</div>
+          <div class="fr-time"></div>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+</div>
+<div class="card" style="margin-bottom:20px">
+  <div class="card-body">
+    <div class="flight-row">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+        <div class="fr-date-hdr" style="margin-bottom:0">Lun 20 Jul 2026</div>
+        <div class="fr-pax-row" style="margin-top:0;margin-bottom:0"><div class="pax-chip"><div class="pax-dot" style="background:#10b981">J</div> Jose</div></div>
+      </div>
+      <div class="fr-head">
+        <div class="airline-pill" style="background:var(--blue)">LATAM</div>
+        <span class="fr-chip" style="background:rgba(90,171,255,.15);color:var(--blue)">LA8115</span>
+        
+        <span class="fr-chip" style="background:rgba(212,168,67,.15);color:var(--gold)">••••KM</span>
+        
+      </div>
+      <div class="fr-route">
+        <div class="fr-city">
+          <div class="fr-iata">BCN</div>
+          <div class="fr-time">13:10</div>
+        </div>
+        <div class="fr-mid">
+          <div class="fr-dur">·</div>
+          <div class="fr-line-wrap"><div class="fr-line"></div><span class="fr-plane">✈</span></div>
+          <div class="fr-dur">LA8115 · Directo</div>
+        </div>
+        <div class="fr-city" style="text-align:right">
+          <div class="fr-iata">GRU</div>
+          <div class="fr-time">19:10</div>
+          
+        </div>
+      </div>
+      
+      
+    </div>
+  </div>
+</div>
+<div class="card" style="margin-bottom:20px">
+  <div class="card-body">
+    <div class="flight-row">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+        <div class="fr-date-hdr" style="margin-bottom:0">Lun 20 Jul 2026</div>
+        <div class="fr-pax-row" style="margin-top:0;margin-bottom:0"><div class="pax-chip"><div class="pax-dot" style="background:#10b981">J</div> Jose</div></div>
+      </div>
+      <div class="fr-head">
+        <div class="airline-pill" style="background:var(--blue)">LATAM</div>
+        <span class="fr-chip" style="background:rgba(90,171,255,.15);color:var(--blue)">LA3444</span>
+        
+        <span class="fr-chip" style="background:rgba(212,168,67,.15);color:var(--gold)">••••KM</span>
+        
+      </div>
+      <div class="fr-route">
+        <div class="fr-city">
+          <div class="fr-iata">GRU</div>
+          <div class="fr-time">22:25</div>
+        </div>
+        <div class="fr-mid">
+          <div class="fr-dur">·</div>
+          <div class="fr-line-wrap"><div class="fr-line"></div><span class="fr-plane">✈</span></div>
+          <div class="fr-dur">LA3444 · Directo</div>
+        </div>
+        <div class="fr-city" style="text-align:right">
+          <div class="fr-iata">NAT</div>
+          <div class="fr-time">01:40 <span style="background:#FF3B30;color:#000;font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;vertical-align:middle">+1 día</span></div>
+          <div style="font-size:12px;color:var(--dim)">Mar 21 Jul 2026</div>
+        </div>
+      </div>
+      
+      
+    </div>
+  </div>
+</div>
+<div class="card" style="margin-bottom:20px">
+  <div class="card-body">
+    <div class="flight-row">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+        <div class="fr-date-hdr" style="margin-bottom:0">Mar 21 Jul 2026</div>
+        
+      </div>
+      <div class="fr-head">
+        <div class="airline-pill" style="background:var(--blue)">LATAM</div>
+        <span class="fr-chip" style="background:rgba(90,171,255,.15);color:var(--blue)">LA 707</span>
+        <span class="fr-chip" style="background:rgba(48,209,88,.12);color:var(--green)">Economy Standard</span>
+        <span class="fr-chip" style="background:rgba(212,168,67,.15);color:var(--gold)">••••OH</span>
+        <span class="fr-chip" style="background:rgba(255,159,10,.15);color:var(--amber);margin-left:auto">T4S Salida</span>
+      </div>
+      <div class="fr-route">
+        <div class="fr-city">
+          <div class="fr-iata">Madrid</div>
+          <div class="fr-time">13:15</div>
+        </div>
+        <div class="fr-mid">
+          <div class="fr-dur">Economy Standard</div>
+          <div class="fr-line-wrap"><div class="fr-line"></div><span class="fr-plane">✈</span></div>
+          <div class="fr-dur">LA 707 · Directo</div>
+        </div>
+        <div class="fr-city" style="text-align:right">
+          <div class="fr-iata">Santiago de Chile</div>
+          <div class="fr-time">20:35</div>
+          
+        </div>
+      </div>
+      <div style="margin-top:6px;display:flex;gap:5px"><span class="booking-tag">Asientos: 24A</span></div>
+      
+    </div>
+  </div>
+</div>
+<div class="card" style="margin-bottom:20px">
+  <div class="card-body">
+    <div class="flight-row">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+        <div class="fr-date-hdr" style="margin-bottom:0">Mar 21 Jul 2026</div>
+        <div class="fr-pax-row" style="margin-top:0;margin-bottom:0"><div class="pax-chip"><div class="pax-dot" style="background:#e879f9">O</div> Olivia</div></div>
+      </div>
+      <div class="fr-head">
+        <div class="airline-pill" style="background:var(--blue)">LATAM</div>
+        <span class="fr-chip" style="background:rgba(90,171,255,.15);color:var(--blue)">LA 707</span>
+        <span class="fr-chip" style="background:rgba(48,209,88,.12);color:var(--green)">Economy</span>
+        <span class="fr-chip" style="background:rgba(212,168,67,.15);color:var(--gold)">••••PW</span>
+        <span class="fr-chip" style="background:rgba(255,159,10,.15);color:var(--amber);margin-left:auto">T4S Salida</span>
+      </div>
+      <div class="fr-route">
+        <div class="fr-city">
+          <div class="fr-iata">Madrid (MAD)</div>
+          <div class="fr-time">13:15</div>
+        </div>
+        <div class="fr-mid">
+          <div class="fr-dur">Economy</div>
+          <div class="fr-line-wrap"><div class="fr-line"></div><span class="fr-plane">✈</span></div>
+          <div class="fr-dur">LA 707 · Directo</div>
+        </div>
+        <div class="fr-city" style="text-align:right">
+          <div class="fr-iata">Santiago (SCL)</div>
+          <div class="fr-time">20:35</div>
+          
+        </div>
+      </div>
+      <div style="margin-top:6px;display:flex;gap:5px"><span class="booking-tag">Asientos: 24C</span></div>
+      
+    </div>
+  </div>
+</div></div>
+      <div id="page-hoteles" class="page">
+<div class="card">
+  <div class="card-header" style="border-left:3px solid #7b2d8b">
+    <span class="badge badge-green" style="margin-left:auto">✓ Reservado</span>
+  </div>
+  <div class="card-date-bar">
+    <div style="flex:1">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="fr-date-hdr">Jue 9 Jul 2026</div>
+        <span style="font-size:13px;font-weight:700;padding:3px 12px;border-radius:20px;background:#7b2d8b28;color:#7b2d8b;letter-spacing:.02em">Madrid</span>
+      </div>
+      <div class="card-entity-name">Nômade Temple Madrid</div>
+    </div>
+  </div>
+  <div class="card-body">
+    <div class="card-map-row">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:10px;color:var(--dim);margin-bottom:10px">Gran Vía, 11, Centro, Madrid, 28013, España</div>
+        <div class="info-row"><span class="info-lbl">Ciudad</span><span class="info-val">Madrid</span></div>
+        <div class="info-row"><span class="info-lbl">Check-in</span><span class="info-val">9 Jul 2026</span></div>
+        <div class="info-row"><span class="info-lbl">Check-out</span><span class="info-val">13 Jul 2026</span></div>
+        <div class="info-row"><span class="info-lbl">Noches</span><span class="info-val">4</span></div>
+        <div class="info-row"><span class="info-lbl">Habitación</span><span class="info-val">Standard Room (Choice)</span></div>
+        <div class="info-row"><span class="info-lbl">Reserva</span><span class="info-val mono">••••••••••••31</span></div>
+        <div class="info-row"><span class="info-lbl">Precio</span><span class="info-val" style="font-weight:600">€1.425,60</span></div>
+        <div class="info-row"><span class="info-lbl">Cancelación</span><span class="info-val">hasta 8 Jul 2026</span></div>
+        
+      </div>
+      <div id="map-hotel-0" style="width:70%;min-width:160px;min-height:200px;border-radius:10px;overflow:hidden;flex-shrink:0;border:.5px solid var(--card-border);align-self:stretch"></div>
+    </div>
+  </div>
+</div>
+<div class="card" style="opacity:.6">
+  <div class="card-header" style="border-left:3px solid #7b2d8b">
+    <span class="badge badge-red" style="margin-left:auto">Cancelado</span>
+  </div>
+  <div class="card-date-bar">
+    <div style="flex:1">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="fr-date-hdr">Jue 9 Jul 2026</div>
+        <span style="font-size:13px;font-weight:700;padding:3px 12px;border-radius:20px;background:#7b2d8b28;color:#7b2d8b;letter-spacing:.02em">Madrid</span>
+      </div>
+      <div class="card-entity-name"><span style="text-decoration:line-through">Room Mate Collection Alba</span></div>
+    </div>
+  </div>
+  <div class="card-body">
+    <div class="card-map-row">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:10px;color:var(--dim);margin-bottom:10px">16 Calle de las Huertas, Centro, Madrid, 28012, España</div>
+        <div class="info-row"><span class="info-lbl">Ciudad</span><span class="info-val">Madrid</span></div>
+        <div class="info-row"><span class="info-lbl">Check-in</span><span class="info-val">9 Jul 2026</span></div>
+        <div class="info-row"><span class="info-lbl">Check-out</span><span class="info-val">13 Jul 2026</span></div>
+        <div class="info-row"><span class="info-lbl">Noches</span><span class="info-val">4</span></div>
+        <div class="info-row"><span class="info-lbl">Habitación</span><span class="info-val">1 habitación</span></div>
+        <div class="info-row"><span class="info-lbl">Reserva</span><span class="info-val mono">••••••••99</span></div>
+        
+        
+        <div class="info-row" style="border-bottom:none"><span class="info-lbl">Teléfono</span><span class="info-val mono">+34 910 80 64 71</span></div>
+      </div>
+      
+    </div>
+  </div>
+</div>
+<div class="card">
+  <div class="card-header" style="border-left:3px solid #0077b6">
+    <span class="badge badge-green" style="margin-left:auto">✓ Reservado</span>
+  </div>
+  <div class="card-date-bar">
+    <div style="flex:1">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="fr-date-hdr">Lun 13 Jul 2026</div>
+        <span style="font-size:13px;font-weight:700;padding:3px 12px;border-radius:20px;background:#0077b628;color:#0077b6;letter-spacing:.02em">Niza</span>
+      </div>
+      <div class="card-entity-name">Palais Saleya Boutique Hôtel</div>
+    </div>
+  </div>
+  <div class="card-body">
+    <div class="card-map-row">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:10px;color:var(--dim);margin-bottom:10px">21 rue du marché, Niza 06300, Francia</div>
+        <div class="info-row"><span class="info-lbl">Ciudad</span><span class="info-val">Niza</span></div>
+        <div class="info-row"><span class="info-lbl">Check-in</span><span class="info-val">13 Jul 2026</span></div>
+        <div class="info-row"><span class="info-lbl">Check-out</span><span class="info-val">15 Jul 2026</span></div>
+        <div class="info-row"><span class="info-lbl">Noches</span><span class="info-val">2</span></div>
+        <div class="info-row"><span class="info-lbl">Habitación</span><span class="info-val">Suite Deluxe con entreplanta</span></div>
+        <div class="info-row"><span class="info-lbl">Reserva</span><span class="info-val mono">••••••••93</span></div>
+        <div class="info-row"><span class="info-lbl">Precio</span><span class="info-val" style="font-weight:600">€952,20</span></div>
+        <div class="info-row"><span class="info-lbl">Cancelación</span><span class="info-val">hasta 9 Jul 2026</span></div>
+        <div class="info-row" style="border-bottom:none"><span class="info-lbl">Teléfono</span><span class="info-val mono">+33492000909</span></div>
+      </div>
+      <div id="map-hotel-1" style="width:70%;min-width:160px;min-height:200px;border-radius:10px;overflow:hidden;flex-shrink:0;border:.5px solid var(--card-border);align-self:stretch"></div>
+    </div>
+  </div>
+</div>
+<div class="card">
+  <div class="card-header" style="border-left:3px solid #e67e22">
+    <span class="badge badge-green" style="margin-left:auto">✓ Reservado</span>
+  </div>
+  <div class="card-date-bar">
+    <div style="flex:1">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="fr-date-hdr">Mié 15 Jul 2026</div>
+        <span style="font-size:13px;font-weight:700;padding:3px 12px;border-radius:20px;background:#e67e2228;color:#e67e22;letter-spacing:.02em">Nîmes</span>
+      </div>
+      <div class="card-entity-name">Margaret - Hôtel Chouleur</div>
+    </div>
+  </div>
+  <div class="card-body">
+    <div class="card-map-row">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:10px;color:var(--dim);margin-bottom:10px">6 Rue Fresque, Nîmes 30000, Francia</div>
+        <div class="info-row"><span class="info-lbl">Ciudad</span><span class="info-val">Nîmes</span></div>
+        <div class="info-row"><span class="info-lbl">Check-in</span><span class="info-val">15 Jul 2026</span></div>
+        <div class="info-row"><span class="info-lbl">Check-out</span><span class="info-val">17 Jul 2026</span></div>
+        <div class="info-row"><span class="info-lbl">Noches</span><span class="info-val">2</span></div>
+        <div class="info-row"><span class="info-lbl">Habitación</span><span class="info-val">Suite Familiar</span></div>
+        <div class="info-row"><span class="info-lbl">Reserva</span><span class="info-val mono">••••••••14</span></div>
+        <div class="info-row"><span class="info-lbl">Precio</span><span class="info-val" style="font-weight:600">€916,20</span></div>
+        <div class="info-row"><span class="info-lbl">Cancelación</span><span class="info-val">hasta 12 Jul 2026</span></div>
+        
+      </div>
+      <div id="map-hotel-2" style="width:70%;min-width:160px;min-height:200px;border-radius:10px;overflow:hidden;flex-shrink:0;border:.5px solid var(--card-border);align-self:stretch"></div>
+    </div>
+  </div>
+</div>
+<div class="card">
+  <div class="card-header" style="border-left:3px solid #117a65">
+    <span class="badge badge-green" style="margin-left:auto">✓ Reservado</span>
+  </div>
+  <div class="card-date-bar">
+    <div style="flex:1">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="fr-date-hdr">Vie 17 Jul 2026</div>
+        <span style="font-size:13px;font-weight:700;padding:3px 12px;border-radius:20px;background:#117a6528;color:#117a65;letter-spacing:.02em">Cadaqués</span>
+      </div>
+      <div class="card-entity-name">Gaia Apartments &amp; Lofts Cadaqués</div>
+    </div>
+  </div>
+  <div class="card-body">
+    <div class="card-map-row">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:10px;color:var(--dim);margin-bottom:10px">Norio 1-3 Cadaqués Girona, Cadaqués, 17488, España</div>
+        <div class="info-row"><span class="info-lbl">Ciudad</span><span class="info-val">Cadaqués</span></div>
+        <div class="info-row"><span class="info-lbl">Check-in</span><span class="info-val">17 Jul 2026</span></div>
+        <div class="info-row"><span class="info-lbl">Check-out</span><span class="info-val">18 Jul 2026</span></div>
+        <div class="info-row"><span class="info-lbl">Noches</span><span class="info-val">1</span></div>
+        <div class="info-row"><span class="info-lbl">Habitación</span><span class="info-val">1 apartamento</span></div>
+        <div class="info-row"><span class="info-lbl">Reserva</span><span class="info-val mono">••••••••63</span></div>
+        <div class="info-row"><span class="info-lbl">Precio</span><span class="info-val" style="font-weight:600">€330,24</span></div>
+        <div class="info-row"><span class="info-lbl">Cancelación</span><span class="info-val">hasta 9 Jul 2026</span></div>
+        <div class="info-row" style="border-bottom:none"><span class="info-lbl">Teléfono</span><span class="info-val mono">+34 972 48 54 10</span></div>
+      </div>
+      <div id="map-hotel-3" style="width:70%;min-width:160px;min-height:200px;border-radius:10px;overflow:hidden;flex-shrink:0;border:.5px solid var(--card-border);align-self:stretch"></div>
+    </div>
+  </div>
+</div>
+<div class="card">
+  <div class="card-header" style="border-left:3px solid #c0392b">
+    <span class="badge badge-green" style="margin-left:auto">✓ Reservado</span>
+  </div>
+  <div class="card-date-bar">
+    <div style="flex:1">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="fr-date-hdr">Sáb 18 Jul 2026</div>
+        <span style="font-size:13px;font-weight:700;padding:3px 12px;border-radius:20px;background:#c0392b28;color:#c0392b;letter-spacing:.02em">Barcelona</span>
+      </div>
+      <div class="card-entity-name">Hotel Casa Luz</div>
+    </div>
+  </div>
+  <div class="card-body">
+    <div class="card-map-row">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:10px;color:var(--dim);margin-bottom:10px">Ronda de la Universitat 1, Eixample, 08007 Barcelona, España</div>
+        <div class="info-row"><span class="info-lbl">Ciudad</span><span class="info-val">Barcelona</span></div>
+        <div class="info-row"><span class="info-lbl">Check-in</span><span class="info-val">18 Jul 2026</span></div>
+        <div class="info-row"><span class="info-lbl">Check-out</span><span class="info-val">20 Jul 2026</span></div>
+        <div class="info-row"><span class="info-lbl">Noches</span><span class="info-val">2</span></div>
+        <div class="info-row"><span class="info-lbl">Habitación</span><span class="info-val">2 habitaciones · 4 adultos</span></div>
+        <div class="info-row"><span class="info-lbl">Reserva</span><span class="info-val mono">••••••••91</span></div>
+        <div class="info-row"><span class="info-lbl">Precio</span><span class="info-val" style="font-weight:600">€1.165,60</span></div>
+        <div class="info-row"><span class="info-lbl">Cancelación</span><span class="info-val" style="color:var(--red);font-weight:700">⚠️ Sin fecha registrada</span></div>
+        <div class="info-row" style="border-bottom:none"><span class="info-lbl">Teléfono</span><span class="info-val mono">+34 931 18 08 08</span></div>
+      </div>
+      <div id="map-hotel-4" style="width:70%;min-width:160px;min-height:200px;border-radius:10px;overflow:hidden;flex-shrink:0;border:.5px solid var(--card-border);align-self:stretch"></div>
+    </div>
+  </div>
+</div>
+<div class="card">
+  <div class="card-header">
+    <span class="ch-icon">🇪🇸</span>
+    <span class="ch-title">Madrid</span>
+    <span class="badge badge-red" style="margin-left:auto">⛔ Sin reservar</span>
+  </div>
+  <div class="card-body">
+    <div class="hotel-missing">
+      <div style="font-size:28px;margin-bottom:6px">🏨</div>
+      <div style="font-size:13px;font-weight:700;color:var(--red);margin-bottom:4px">Hotel sin reservar</div>
+      <div style="font-size:11px;color:#b91c1c">20 Jul 2026 – 21 Jul 2026 · 1 noches</div>
+    </div>
+  </div>
+</div></div>
+      <div id="page-documentos" class="page"><div class="card"><div class="card-header"><span class="ch-icon">📄</span><span class="ch-title">Documentos del viaje</span></div><div class="card-body">
+<div class="doc-row"  style="">
+  <div class="doc-icon" style="background:#3b82f618;color:#3b82f6">✈</div>
+  <div style="flex:1;min-width:0">
+    <div class="doc-title">Vuelo Santiago ⇄ Madrid</div>
+    <div class="doc-sub">LATAM LA708/LA707 · 12-21 jul 2026 · ••••OH · Economy Standard</div>
+  </div>
+  <div class="doc-right"><span class="badge badge-green">✓</span></div>
+</div>
+<div class="doc-row"  style="">
+  <div class="doc-icon" style="background:#ef444418;color:#ef4444">✈</div>
+  <div style="flex:1;min-width:0">
+    <div class="doc-title">Madrid → Niza</div>
+    <div class="doc-sub">IB1213 · 13 JUL 16:20 · •••M6 · Jose</div>
+  </div>
+  <div class="doc-right"><span class="badge badge-green">✓</span></div>
+</div>
+<div class="doc-row"  style="">
+  <div class="doc-icon" style="background:#22c55e18;color:#22c55e">🏨</div>
+  <div style="flex:1;min-width:0">
+    <div class="doc-title">Nômade Temple Madrid</div>
+    <div class="doc-sub">9-13 Jul · Standard Room · 2 adultos</div>
+  </div>
+  <div class="doc-right"><span class="badge badge-green">✓</span></div>
+</div>
+<div class="doc-row"  style="">
+  <div class="doc-icon" style="background:#14b8a618;color:#14b8a6">🏨</div>
+  <div style="flex:1;min-width:0">
+    <div class="doc-title">Hotel - Standard Room</div>
+    <div class="doc-sub">4 noches x 1 room · €1,425.60 · Veronica Mendez Risopatrón</div>
+  </div>
+  <div class="doc-right"><span class="badge badge-green">✓</span></div>
+</div>
+<div class="doc-row"  style="">
+  <div class="doc-icon" style="background:#14b8a618;color:#14b8a6">🏨</div>
+  <div style="flex:1;min-width:0">
+    <div class="doc-title">Información de reserva de hotel</div>
+    <div class="doc-sub">Depósito EUR 50/noche. Cancelación gratis antes 8 Jul 2026 18:00. Máx 2 huéspedes.</div>
+  </div>
+  <div class="doc-right"><span class="badge badge-green">✓</span></div>
+</div>
+<div class="doc-row"  style="">
+  <div class="doc-icon" style="background:#3b82f618;color:#3b82f6">✈</div>
+  <div style="flex:1;min-width:0">
+    <div class="doc-title">Vuelo Santiago ⇄ Madrid (••••PW)</div>
+    <div class="doc-sub">LATAM LA708/LA707 · 12-21 jul 2026 · Olivia Fontaine · Turista</div>
+  </div>
+  <div class="doc-right"><span class="badge badge-green">✓</span></div>
+</div>
+<div class="doc-row"  style="">
+  <div class="doc-icon" style="background:#14b8a618;color:#14b8a6">🏨</div>
+  <div style="flex:1;min-width:0">
+    <div class="doc-title">Gaia Apartments &amp; Lofts Cadaqués</div>
+    <div class="doc-sub">17-18 jul 2026 · Reserva ••••••••63 · €330,24</div>
+  </div>
+  <div class="doc-right"><span class="badge badge-green">✓</span></div>
+</div>
+<div class="doc-row"  style="">
+  <div class="doc-icon" style="background:#3b82f618;color:#3b82f6">🏨</div>
+  <div style="flex:1;min-width:0">
+    <div class="doc-title">Margaret - Hôtel Chouleur</div>
+    <div class="doc-sub">15-17 jul 2026, Nîmes · Suite Familiar · Reserva ••••••••14</div>
+  </div>
+  <div class="doc-right"><span class="badge badge-green">✓</span></div>
+</div>
+<div class="doc-row"  style="">
+  <div class="doc-icon" style="background:#3b82f618;color:#3b82f6">🏨</div>
+  <div style="flex:1;min-width:0">
+    <div class="doc-title">Palais Saleya Boutique Hôtel</div>
+    <div class="doc-sub">Niza · 13-15 jul 2026 · Suite Deluxe · Reserva ••••••••93</div>
+  </div>
+  <div class="doc-right"><span class="badge badge-green">✓</span></div>
+</div>
+<div class="doc-row"  style="">
+  <div class="doc-icon" style="background:#ef444418;color:#ef4444">✈</div>
+  <div style="flex:1;min-width:0">
+    <div class="doc-title">MAD → NCE</div>
+    <div class="doc-sub">IB1213 · 13 jul 2026 · 16:20-18:15 · Economy</div>
+  </div>
+  <div class="doc-right"><span class="badge badge-green">✓</span></div>
+</div>
+<div class="doc-row"  style="">
+  <div class="doc-icon" style="background:#14b8a618;color:#14b8a6">🚗</div>
+  <div style="flex:1;min-width:0">
+    <div class="doc-title">Auto Europe - Mercedes GLC</div>
+    <div class="doc-sub">Niza (Jul 15) → Barcelona (Jul 18) | Voucher US813057577 | Total $2625.01</div>
+  </div>
+  <div class="doc-right"><span class="badge badge-green">✓</span></div>
+</div>
+<div class="doc-row"  style="">
+  <div class="doc-icon" style="background:#3b82f618;color:#3b82f6">🏨</div>
+  <div style="flex:1;min-width:0">
+    <div class="doc-title">Hotel Casa Luz</div>
+    <div class="doc-sub">18-20 jul 2026 · 2 hab · 4 adultos · Barcelona</div>
+  </div>
+  <div class="doc-right"><span class="badge badge-green">✓</span></div>
+</div>
+<div class="doc-row"  style="">
+  <div class="doc-icon" style="background:#ef444418;color:#ef4444">✈</div>
+  <div style="flex:1;min-width:0">
+    <div class="doc-title">SCL → MAD</div>
+    <div class="doc-sub">IB6652 · 12 jul 2026 16:05 · Jose Rodriguez</div>
+  </div>
+  <div class="doc-right"><span class="badge badge-green">✓</span></div>
+</div>
+<div class="doc-row"  style="">
+  <div class="doc-icon" style="background:#14b8a618;color:#14b8a6">🏨</div>
+  <div style="flex:1;min-width:0">
+    <div class="doc-title">Room Mate Collection Alba</div>
+    <div class="doc-sub">9-13 jul 2026 · 4 noches · Madrid</div>
+  </div>
+  <div class="doc-right"><span class="badge badge-green">✓</span></div>
+</div>
+<div class="doc-row"  style="">
+  <div class="doc-icon" style="background:#3b82f618;color:#3b82f6">✈</div>
+  <div style="flex:1;min-width:0">
+    <div class="doc-title">SCL → MAD (LA706)</div>
+    <div class="doc-sub">8 jul 2026, 19:00 · Veronica Mendez · ••••OH</div>
+  </div>
+  <div class="doc-right"><span class="badge badge-green">✓</span></div>
+</div>
+<div class="doc-row"  style="">
+  <div class="doc-icon" style="background:#3b82f618;color:#3b82f6">🏨</div>
+  <div style="flex:1;min-width:0">
+    <div class="doc-title">Room Mate Collection Alba, Madrid</div>
+    <div class="doc-sub">Check-in 9 jul 2026 · Conf. ••••••••99 · PIN ••13</div>
+  </div>
+  <div class="doc-right"><span class="badge badge-green">✓</span></div>
+</div>
+<div class="doc-row"  style="">
+  <div class="doc-icon" style="background:#ef444418;color:#ef4444">🏨</div>
+  <div style="flex:1;min-width:0">
+    <div class="doc-title">Room Mate Collection Alba (CANCELADA)</div>
+    <div class="doc-sub">Reserva ••••••••99 cancelada · Madrid</div>
+  </div>
+  <div class="doc-right"><span class="badge badge-green">✓</span></div>
+</div>
+<div class="doc-row"  style="">
+  <div class="doc-icon" style="background:#3b82f618;color:#3b82f6">✈</div>
+  <div style="flex:1;min-width:0">
+    <div class="doc-title">Barcelona → Natal</div>
+    <div class="doc-sub">20 jul 2026 · LATAM · ••••KM</div>
+  </div>
+  <div class="doc-right"><span class="badge badge-green">✓</span></div>
+</div></div></div>
+<div id="doc-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:10000;background:rgba(0,0,0,.93);overflow-y:auto;-webkit-overflow-scrolling:touch" onclick="if(event.target===this)closeDocModal()">
+  <button onclick="closeDocModal()" style="position:fixed;top:14px;right:16px;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:22px;width:36px;height:36px;border-radius:50%;cursor:pointer;z-index:10001;display:flex;align-items:center;justify-content:center;line-height:1">×</button>
+  <div id="doc-modal-inner" style="padding:56px 12px 32px;max-width:720px;margin:0 auto;text-align:center"></div>
+</div>
+<script>
+var _DOCS=[];
+var _docMap={};
+_DOCS.forEach(function(d){_docMap[d.i]=d;});
+function openDoc(i){
+  var d=_docMap[i]; if(!d) return;
+  var src='data:'+d.mime+';base64,'+d.b64;
+  var inner=document.getElementById('doc-modal-inner');
+  if(d.mime.startsWith('image/')){
+    inner.innerHTML='<div style="color:#fff;font-size:14px;margin-bottom:12px">'+d.titulo+'</div><img src="'+src+'" style="max-width:100%;border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,.4)">';
+  } else {
+    inner.innerHTML='<div style="color:#fff;font-size:14px;margin-bottom:12px">'+d.titulo+'</div><iframe src="'+src+'" style="width:100%;height:80vh;border:none;border-radius:10px"></iframe>';
+  }
+  document.getElementById('doc-modal').style.display='block';
+  document.body.style.overflow='hidden';
+}
+function closeDocModal(){
+  document.getElementById('doc-modal').style.display='none';
+  document.getElementById('doc-modal-inner').innerHTML='';
+  document.body.style.overflow='';
+}
+</script></div>
+      <div id="page-checklist" class="page">
+<div class="card">
+  <div class="card-header">
+    <span class="ch-title">Pendientes del viaje</span>
+    <span class="badge badge-red" style="margin-left:auto">10</span>
+  </div>
+  <div class="card-body"><div class="check-row"><div class="check-circle" id="cc-trip-0"></div><div><div class="check-title">Check-in LATAM LA706 online para Veronica (24h antes del 8 Jul — desde el 7 Jul 19:00)</div></div></div><div class="check-row"><div class="check-circle" id="cc-trip-1"></div><div><div class="check-title">Check-in LATAM LA708 online para Olivia (24h antes del 12 Jul)</div></div></div><div class="check-row"><div class="check-circle" id="cc-trip-2"></div><div><div class="check-title">Check-in Iberia IB6652 online para José (48h antes del 12 Jul)</div></div></div><div class="check-row"><div class="check-circle" id="cc-trip-3"></div><div><div class="check-title">Check-in Iberia IB1213 online para los 4 (48h antes del 13 Jul)</div></div></div><div class="check-row"><div class="check-circle" id="cc-trip-4"></div><div><div class="check-title">Seleccionar asientos Iberia IB1213</div></div></div><div class="check-row"><div class="check-circle" id="cc-trip-5"></div><div><div class="check-title">Reservar transporte Barcelona → Madrid (tren AVE ~2h30 o vuelo, 20 Jul)</div></div></div><div class="check-row"><div class="check-circle" id="cc-trip-6"></div><div><div class="check-title">Alojamiento noche 20 Jul en Madrid (checkout Barcelona 20 Jul 12:00, vuelo 21 Jul 13:15)</div></div></div><div class="check-row"><div class="check-circle" id="cc-trip-7"></div><div><div class="check-title">Pasaporte / documento de viaje para MATILDE RODRIGUEZ CANO MENDEZ</div></div></div><div class="check-row"><div class="check-circle" id="cc-trip-8"></div><div><div class="check-title">Pasaporte / documento de viaje para JOSE RODRIGUEZ CANO MENDEZ</div></div></div><div class="check-row"><div class="check-circle" id="cc-trip-9"></div><div><div class="check-title">Seguro de viaje</div></div></div></div>
+</div>
+<div class="card">
+  <div class="card-header"><span class="ch-title">Travel Basics — Equipaje</span></div>
+  <div class="card-body"><div class="check-row"><div class="check-circle" id="cc-b1-0"></div><div><div class="check-title">SEGURO VISA</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-1"></div><div><div class="check-title">Remedio dormir avión</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-2"></div><div><div class="check-title">Tapones oído bolso mano</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-3"></div><div><div class="check-title">Antiácido</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-4"></div><div><div class="check-title">Antiinflamatorio bolso mano</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-5"></div><div><div class="check-title">Remedios en bolso mano</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-6"></div><div><div class="check-title">Checkin online</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-7"></div><div><div class="check-title">Earpods</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-8"></div><div><div class="check-title">Polerón avión</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-9"></div><div><div class="check-title">Cortavientos</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-10"></div><div><div class="check-title">Libros</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-11"></div><div><div class="check-title">Anteojos repuesto</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-12"></div><div><div class="check-title">iPad</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-13"></div><div><div class="check-title">Cargador iPhone</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-14"></div><div><div class="check-title">Cargador Reloj</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-15"></div><div><div class="check-title">Cargador y enchufe bolso mano</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-16"></div><div><div class="check-title">Placa dientes</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-17"></div><div><div class="check-title">Anteojos lectura</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-18"></div><div><div class="check-title">Audífonos avión</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-19"></div><div><div class="check-title">Billetera</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-20"></div><div><div class="check-title">Tapones oído</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-21"></div><div><div class="check-title">Remedios</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-22"></div><div><div class="check-title">Máquina afeitar</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-23"></div><div><div class="check-title">Crema facial</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-24"></div><div><div class="check-title">Crema cuerpo</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-25"></div><div><div class="check-title">Shampoo</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-26"></div><div><div class="check-title">Acondicionador</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-27"></div><div><div class="check-title">Pasta dientes + cepillo</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-28"></div><div><div class="check-title">Desodorante</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-29"></div><div><div class="check-title">Perfume</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-30"></div><div><div class="check-title">Afeitadora eléctrica</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-31"></div><div><div class="check-title">Adaptador corriente</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-32"></div><div><div class="check-title">Neceser</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-33"></div><div><div class="check-title">Anteojos sol</div></div></div></div>
+</div>
+<div class="card">
+  <div class="card-header"><span class="ch-title">Travel Basics — Ropa y accesorios</span></div>
+  <div class="card-body"><div class="check-row"><div class="check-circle" id="cc-b2-0"></div><div><div class="check-title">Ropa interior (7 días)</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-1"></div><div><div class="check-title">Calcetines (7 días)</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-2"></div><div><div class="check-title">Polera manga corta (3)</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-3"></div><div><div class="check-title">Polera manga larga (2)</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-4"></div><div><div class="check-title">Pantalón casual (2)</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-5"></div><div><div class="check-title">Short/bermuda (2)</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-6"></div><div><div class="check-title">Jeans (1)</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-7"></div><div><div class="check-title">Polerón/sweater (1)</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-8"></div><div><div class="check-title">Chaqueta ligera</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-9"></div><div><div class="check-title">Zapatos cómodos</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-10"></div><div><div class="check-title">Zapatillas deporte</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-11"></div><div><div class="check-title">Sandalia/chancleta</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-12"></div><div><div class="check-title">Pijama</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-13"></div><div><div class="check-title">Ropa formal (1 set)</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-14"></div><div><div class="check-title">Cinturón</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-15"></div><div><div class="check-title">Gorro/gorra</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-16"></div><div><div class="check-title">Bufanda (si es frío)</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-17"></div><div><div class="check-title">Guantes (si es frío)</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-18"></div><div><div class="check-title">Mochila día</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-19"></div><div><div class="check-title">Candado maleta</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-20"></div><div><div class="check-title">Bolsas ziploc</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-21"></div><div><div class="check-title">Toalla microfibra</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-22"></div><div><div class="check-title">Botiquín básico</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-23"></div><div><div class="check-title">Protector solar</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-24"></div><div><div class="check-title">Repelente insectos</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-25"></div><div><div class="check-title">Paraguas/impermeable</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-26"></div><div><div class="check-title">Pila portátil (powerbank)</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-27"></div><div><div class="check-title">Cables USB</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-28"></div><div><div class="check-title">Snacks viaje</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-29"></div><div><div class="check-title">Almohada cuello</div></div></div></div>
+</div></div>
+      <div id="page-presupuesto" class="page">
+<div class="card" style="border-left:3px solid var(--green)">
+  <div class="card-header"><span class="ch-icon">💰</span><span class="ch-title">Total estimado</span></div>
+  <div class="card-body">
+    <div class="budget-row"><span style="color:var(--dim)">Suma de reservas con precio</span><span style="font-weight:700;font-size:15px">CL$ 1.636.970</span></div>
+    <div class="budget-row"><span style="color:var(--dim)">Equivalente en dólares</span><span style="font-weight:700;font-size:15px;color:var(--green)" id="total-usd">US$ …</span></div>
+    <div style="font-size:11px;color:var(--dim);margin-top:6px" id="usd-rate-note">Cargando tasa de cambio…</div>
+  </div>
+</div>
+<script>
+(function(){
+  var CLP=1636970;
+  function pintar(rate,live){
+    var usd=Math.round(CLP/rate);
+    var el=document.getElementById('total-usd');
+    var nt=document.getElementById('usd-rate-note');
+    if(el) el.textContent='US$ '+usd.toLocaleString('es-CL');
+    if(nt) nt.textContent=(live?'Tasa actual: ':'Tasa referencial: ')+'1 USD = $'+Math.round(rate).toLocaleString('es-CL')+' CLP';
+  }
+  pintar(935,false);
+  fetch('https://open.er-api.com/v6/latest/USD').then(function(r){return r.json();}).then(function(d){
+    var rate=d&&d.rates&&d.rates.CLP; if(rate) pintar(rate,true);
+  }).catch(function(){});
+})();
+</script>
+<div class="card">
+  <div class="card-header"><span class="ch-icon">✈</span><span class="ch-title">Vuelos</span></div>
+  <div class="card-body"><div class="budget-row"><span style="color:var(--amber)">✈ LATAM · ••••OH · VERONICA MENDEZ RISOPATRON <span style="font-size:11px;color:var(--amber)">⚠ IDA CAMBIADA: antes LA 708 2026-07-12, ahora LA706 2026-07-08</span></span><span style="color:var(--amber);font-weight:600">Sin precio</span></div><div class="budget-row"><span style="color:var(--dim)">LATAM · ••••PW · OLIVIA FONTAINE MENDEZ <span style="font-size:11px;color:var(--amber);margin-left:6px">⚠ IDA CAMBIADA: antes LA708 2026-07-12, ahora LA 708 2026-07-12 · VUELTA CAMBIADA: antes LA707 2026-07-21, ahora LA 707 2026-07-21</span></span><span style="font-weight:600">CLP 1.636.970</span></div><div class="budget-row"><span style="color:var(--amber)">✈ Iberia (operado por LATAM) · •••62 · JOSE RODRIGUEZ CANO MENDEZ</span><span style="color:var(--amber);font-weight:600">Sin precio</span></div><div class="budget-row"><span style="color:var(--amber)">✈ Iberia (Air Nostrum) · •••M6 · VERONICA MENDEZ RISOPATRON, OLIVIA FONTAINE MENDEZ, MATILDE RODRIGUEZ CANO MENDEZ, JOSE RODRIGUEZ CANO MENDEZ</span><span style="color:var(--amber);font-weight:600">Sin precio</span></div><div class="budget-row"><span style="color:var(--amber)">✈ LATAM · ••••KM · JOSE RODRIGUEZ CANO MENDEZ</span><span style="color:var(--amber);font-weight:600">Sin precio</span></div></div>
+</div>
+<div class="card">
+  <div class="card-header"><span class="ch-icon">🏨</span><span class="ch-title">Alojamiento</span></div>
+  <div class="card-body"><div class="budget-row"><span style="color:var(--dim)">🇪🇸 Nômade Temple Madrid, Madrid · 4n</span><span style="font-weight:600">€1.425,60</span></div><div class="budget-row"><span style="color:var(--dim)">🌊 Palais Saleya Boutique Hôtel, Niza · 2n</span><span style="font-weight:600">€952,20</span></div><div class="budget-row"><span style="color:var(--dim)">🏛 Margaret - Hôtel Chouleur, Nîmes · 2n</span><span style="font-weight:600">€916,20</span></div><div class="budget-row"><span style="color:var(--dim)">⚓ Gaia Apartments &amp; Lofts Cadaqués, Cadaqués · 1n</span><span style="font-weight:600">€330,24</span></div><div class="budget-row"><span style="color:var(--dim)">🏖 Hotel Casa Luz, Barcelona · 2n</span><span style="font-weight:600">€1.165,60</span></div><div class="budget-row"><span style="color:var(--red)">🇪🇸 Hotel Madrid — sin reservar</span><span style="color:var(--red);font-weight:600">⛔</span></div></div>
+</div>
+<div class="card">
+  <div class="card-header"><span class="ch-icon">🚗</span><span class="ch-title">Arriendo de auto</span></div>
+  <div class="card-body"><div class="budget-row"><span style="color:var(--dim)">Auto Europe / Sixt · USB13057577 ·  2026-07-15 →  2026-07-18</span><span style="font-weight:600">USD 2,625.01</span></div></div>
+</div>
+<div class="card" style="border-left:3px solid var(--amber)">
+  <div class="card-header"><span class="ch-icon">⚠</span><span class="ch-title" style="color:var(--amber)">Sin precio registrado (5)</span></div>
+  <div class="card-body"><div class="budget-row"><span style="color:var(--amber)">⚠ Vuelo LATAM ••••OH</span><span style="color:var(--amber);font-weight:600">Sin precio</span></div><div class="budget-row"><span style="color:var(--amber)">⚠ Vuelo Iberia (operado por LATAM) •••62</span><span style="color:var(--amber);font-weight:600">Sin precio</span></div><div class="budget-row"><span style="color:var(--amber)">⚠ Vuelo Iberia (Air Nostrum) •••M6</span><span style="color:var(--amber);font-weight:600">Sin precio</span></div><div class="budget-row"><span style="color:var(--amber)">⚠ Vuelo LATAM ••••KM</span><span style="color:var(--amber);font-weight:600">Sin precio</span></div><div class="budget-row"><span style="color:var(--amber)">⚠ Hotel Madrid (sin reservar)</span><span style="color:var(--amber);font-weight:600">Sin precio</span></div></div>
+</div></div>
+      <div id="page-restaurantes" class="page"><div class="card"><div class="card-body" style="text-align:center;color:var(--dim);padding:32px">No hay restaurantes registrados.<br><span style="font-size:13px">Agrega reservas en el archivo viaje-data.json bajo la clave "restaurantes".</span></div></div></div>
+      <div id="page-actividades" class="page"><div class="card"><div class="card-body" style="text-align:center;color:var(--dim);padding:32px">No hay actividades registradas.<br><span style="font-size:13px">Agrega entradas, tours o actividades en el archivo viaje-data.json bajo la clave "eventos".</span></div></div></div>
+    </div>
+    <div class="content-right">
+      <div class="map-title-bar">📍 Madrid · Niza · Nîmes · Cadaqués · Barcelona · Madrid</div>
+      <div class="map-wrap"><div id="map"></div></div>
+    </div>
+  </div>
+
+  <nav class="ios-nav" id="ios-nav">
+    <button class="ios-nav-item active" data-page="resumen" onclick="showPage('resumen',null)">
+      <span class="ios-nav-ico">✦</span><span class="ios-nav-lbl">Inicio</span>
+    </button>
+    <button class="ios-nav-item" data-page="vuelos" onclick="showPage('vuelos',null)">
+      <span class="ios-nav-ico">🚆</span><span class="ios-nav-lbl">Transporte</span>
+    </button>
+    <button class="ios-nav-item" data-page="hoteles" onclick="showPage('hoteles',null)">
+      <span class="ios-nav-ico">🏨</span><span class="ios-nav-lbl">Hoteles</span>
+    </button>
+    <button class="ios-nav-item" data-page="restaurantes" onclick="showPage('restaurantes',null)">
+      <span class="ios-nav-ico">🍽</span><span class="ios-nav-lbl">Restaurantes</span>
+    </button>
+    <button class="ios-nav-item" data-page="actividades" onclick="showPage('actividades',null)">
+      <span class="ios-nav-ico">🎫</span><span class="ios-nav-lbl">Actividades</span>
+    </button>
+    <button class="ios-nav-item" data-page="mapa" onclick="showPage('mapa',null)">
+      <span class="ios-nav-ico">🗺️</span><span class="ios-nav-lbl">Mapa</span>
+    </button>
+    <button class="ios-nav-item" data-page="presupuesto" onclick="showPage('presupuesto',null)">
+      <span class="ios-nav-ico">💰</span><span class="ios-nav-lbl">Presupuesto</span>
+    </button>
+    <button class="ios-nav-item" data-page="documentos" onclick="showPage('documentos',null)">
+      <span class="ios-nav-ico">📄</span><span class="ios-nav-lbl">Documentos</span>
+    </button>
+    <a class="ios-nav-item" href="https://rodfonta.github.io/TRAVEL/" style="text-decoration:none">
+      <span class="ios-nav-ico">🏠</span><span class="ios-nav-lbl">Viajes</span>
+    </a>
+  </nav>
+
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const SLUG = 'viaje-vero-julio-2026';
+
+function showPage(id, el) {
+  var isMobile = window.innerWidth <= 767;
+  // Handle mobile map tab
+  var contentLeft = document.querySelector('.content-left');
+  var contentRight = document.querySelector('.content-right');
+  if (isMobile) {
+    if (id === 'mapa') {
+      contentLeft.classList.add('mobile-hidden');
+      contentRight.classList.add('mobile-visible');
+      // Esperar a que el contenedor tenga dimensiones reales
+      setTimeout(function() {
+        initMap();
+        setTimeout(function() { if(map) map.invalidateSize({animate:false}); }, 350);
+        setTimeout(function() { if(map) map.invalidateSize({animate:false}); }, 900);
+      }, 120);
+    } else {
+      contentLeft.classList.remove('mobile-hidden');
+      contentRight.classList.remove('mobile-visible');
+    }
+  }
+  if (id !== 'mapa') {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    var pg = document.getElementById('page-' + id);
+    if (pg) pg.classList.add('active');
+  }
+  document.querySelectorAll('.ptab, .sb-item, .ios-nav-item').forEach(t => t.classList.remove('active'));
+  var navItem = document.querySelector('.ios-nav-item[data-page="'+id+'"]');
+  if (navItem) navItem.classList.add('active');
+  if (el) el.classList.add('active');
+  // sync sidebar
+  if (typeof switchMapLayer==='function') switchMapLayer(id);
+  function _initDeferred(fn) {
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){
+      if(typeof fn==='function') { fn(); setTimeout(fn, 400); }
+    }); });
+  }
+  if (id==='restaurantes') _initDeferred(function(){if(typeof initRestaurantMaps==='function')initRestaurantMaps();});
+  if (id==='hoteles')      _initDeferred(function(){if(typeof initHotelMaps==='function')initHotelMaps();});
+  if (id==='actividades')  _initDeferred(function(){if(typeof initActivityMaps==='function')initActivityMaps();});
+  var labelMap = {resumen:'Resumen',vuelos:'Transporte',hoteles:'Hoteles',
+    documentos:'Documentos',checklist:'Checklist',presupuesto:'Presupuesto',
+    restaurantes:'Restaurantes',actividades:'Actividades'};
+  document.querySelectorAll('.sb-item').forEach(i => {
+    var lbl = i.querySelector('.sb-label');
+    if (lbl && lbl.textContent.trim() === (labelMap[id]||'')) i.classList.add('active');
+  });
+  // sync tabs
+  document.querySelectorAll('.ptab').forEach(t => {
+    if (t.getAttribute('onclick') && t.getAttribute('onclick').includes("'"+id+"'")) t.classList.add('active');
+  });
+  // Adjust right panel per tab
+  if (!isMobile) {
+    var cr = document.querySelector('.content-right');
+    var cl = document.querySelector('.content-left');
+    var cs = document.querySelector('.content-split');
+    if (id === 'hoteles' || id === 'restaurantes' || id === 'actividades') {
+      if(cr) cr.style.display = 'none';
+      if(cl) cl.style.gridColumn = '1 / -1';
+      if(cs) cs.style.gridTemplateColumns = '';
+    } else if (id === 'vuelos') {
+      if(cr) cr.style.display = '';
+      if(cl) cl.style.gridColumn = '';
+      if(cs) cs.style.gridTemplateColumns = '30% 70%';
+    } else if (id === 'resumen') {
+      if(cr) cr.style.display = '';
+      if(cl) cl.style.gridColumn = '';
+      if(cs) cs.style.gridTemplateColumns = '50% 50%';
+    } else {
+      if(cr) cr.style.display = '';
+      if(cl) cl.style.gridColumn = '';
+      if(cs) cs.style.gridTemplateColumns = '';
+    }
+    setTimeout(function() { if(window.map) map.invalidateSize({animate:false}); }, 80);
+  }
+}
+
+// Checklist with localStorage
+function toggleCheck(row) {
+  const circle = row.querySelector('.check-circle');
+  const id = row.dataset.id;
+  const done = !circle.classList.contains('done');
+  circle.classList.toggle('done', done);
+  circle.textContent = done ? '✓' : '';
+  row.classList.toggle('done', done);
+  localStorage.setItem('chk_' + SLUG + '_' + id, done ? '1' : '0');
+}
+function loadChecks() {
+  document.querySelectorAll('.check-row').forEach(row => {
+    const id = row.dataset.id;
+    if (id && localStorage.getItem('chk_' + SLUG + '_' + id) === '1') {
+      const circle = row.querySelector('.check-circle');
+      if (circle) { circle.classList.add('done'); circle.textContent = '✓'; }
+      row.classList.add('done');
+    }
+  });
+}
+document.querySelectorAll('.check-row').forEach((row, i) => {
+  if (!row.dataset.id) row.dataset.id = i;
+  row.addEventListener('click', () => toggleCheck(row));
+});
+window.addEventListener('load', loadChecks);
+
+// Map
+
+var map=null, mapInitialized=false;
+var _dL=null, _hL=null, _rL=null, _rteL=null;
+function drawRoad(fromLat,fromLng,toLat,toLng) {
+  var url = 'https://router.project-osrm.org/route/v1/driving/'
+    + fromLng+','+fromLat+';'+toLng+','+toLat
+    + '?overview=full&geometries=geojson';
+  fetch(url)
+    .then(function(r){return r.json();})
+    .then(function(data){
+      var coords = data.routes[0].geometry.coordinates;
+      var latlngs = coords.map(function(c){return [c[1],c[0]];});
+      L.polyline(latlngs,{color:'#d4a843',weight:2.5,opacity:0.7}).addTo(_rteL);
+    })
+    .catch(function(){
+      // Fallback: línea recta si la API no responde
+      L.polyline([[fromLat,fromLng],[toLat,toLng]],{color:'#d4a843',weight:2,dashArray:'4 4',opacity:0.5}).addTo(_rteL);
+    });
+}
+function initMap() {
+  if (mapInitialized) { if(map) map.invalidateSize({animate:false}); return; }
+  mapInitialized = true;
+  map = L.map('map',{zoomControl:true,attributionControl:false}).setView([42.009166666666665,1.6106666666666667],5);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19,attribution:''}).addTo(map);
+  function _ic(lbl,bg,shape) {
+    var r=shape==='sq'?'6px':'50%';
+    return L.divIcon({className:'',html:'<div style="width:28px;height:28px;background:'+bg+';border-radius:'+r+';border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#fff">'+lbl+'</div>',iconSize:[28,28],iconAnchor:[14,14]});
+  }
+  _rteL = L.layerGroup().addTo(map);
+  L.polyline([[40.417,-3.704],[43.711,7.262]],{color:'#5aabff',weight:2.5,dashArray:'7 5',opacity:0.75}).addTo(_rteL);
+  drawRoad(43.711,7.262,43.837,4.36);
+  drawRoad(43.837,4.36,42.288,3.277);
+  drawRoad(42.288,3.277,41.385,2.173);
+  drawRoad(41.385,2.173,40.417,-3.704);
+  _dL = L.layerGroup().addTo(map);
+  function mkD(ll,color,lbl,popup,missing) {
+    var bg=missing?'#dc2626':color;
+    L.marker(ll,{icon:_ic(lbl,bg,'circle')}).addTo(_dL).bindPopup('<b>'+popup+'</b>');
+  }
+  mkD([40.417,-3.704],"#7b2d8b","MAD","Madrid — Nômade Temple Madrid",false);
+  mkD([43.711,7.262],"#0077b6","NIZ","Niza — Palais Saleya Boutique Hôtel",false);
+  mkD([43.837,4.36],"#e67e22","NÎM","Nîmes — Margaret - Hôtel Chouleur",false);
+  mkD([42.288,3.277],"#117a65","CAD","Cadaqués — Gaia Apartments & Lofts Cadaqués",false);
+  mkD([41.385,2.173],"#c0392b","BAR","Barcelona — Hotel Casa Luz",false);
+  mkD([40.417,-3.704],"#7b2d8b","MAD","Madrid — Sin hotel",true);
+  _hL = L.layerGroup();
+  function mkH(ll,color,popup) {
+    L.marker(ll,{icon:_ic('H',color,'sq')}).addTo(_hL).bindPopup('<b>'+popup+'</b>');
+  }
+  mkH([40.417,-3.704],"#7b2d8b","Nômade Temple Madrid · Madrid");
+  mkH([43.711,7.262],"#0077b6","Palais Saleya Boutique Hôtel · Niza");
+  mkH([43.837,4.36],"#e67e22","Margaret - Hôtel Chouleur · Nîmes");
+  mkH([42.288,3.277],"#117a65","Gaia Apartments & Lofts Cadaqués · Cadaqués");
+  mkH([41.385,2.173],"#c0392b","Hotel Casa Luz · Barcelona");
+  _rL = L.layerGroup();
+  function mkR(ll,popup) {
+    L.marker(ll,{icon:_ic('R','#FF9500','sq')}).addTo(_rL).bindPopup('<b>'+popup+'</b>');
+  }
+  
+  requestAnimationFrame(function(){
+    map.invalidateSize({animate:false});
+    setTimeout(function(){map.invalidateSize({animate:false});},300);
+    setTimeout(function(){map.invalidateSize({animate:false});},1000);
+  });
+}
+function switchMapLayer(tab) {
+  if (!map||!mapInitialized) return;
+  if (tab==='hoteles') {
+    if(_dL&&map.hasLayer(_dL)) map.removeLayer(_dL);
+    if(_rL&&map.hasLayer(_rL)) map.removeLayer(_rL);
+    if(_hL&&!map.hasLayer(_hL)) { _hL.addTo(map); try{var b=_hL.getBounds();if(b.isValid())map.fitBounds(b,{padding:[40,40],maxZoom:15});}catch(ex){} }
+  } else if (tab==='restaurantes') {
+    if(_dL&&map.hasLayer(_dL)) map.removeLayer(_dL);
+    if(_hL&&map.hasLayer(_hL)) map.removeLayer(_hL);
+    if(_rL&&!map.hasLayer(_rL)) { _rL.addTo(map); try{var b=_rL.getBounds();if(b.isValid())map.fitBounds(b,{padding:[40,40],maxZoom:15});}catch(ex){} }
+  } else {
+    if(_hL&&map.hasLayer(_hL)) map.removeLayer(_hL);
+    if(_rL&&map.hasLayer(_rL)) map.removeLayer(_rL);
+    if(_dL&&!map.hasLayer(_dL)) { _dL.addTo(map); try{var b=_dL.getBounds();if(b.isValid())map.fitBounds(b,{padding:[20,20]});}catch(ex){} }
+  }
+}
+if (window.innerWidth>767) {
+  if (document.readyState==='loading') {
+    document.addEventListener('DOMContentLoaded',function(){requestAnimationFrame(function(){initMap();});});
+  } else { requestAnimationFrame(function(){initMap();}); }
+}
+window.addEventListener('resize',function(){if(map)map.invalidateSize({animate:false});});
+
+// Restaurant mini-maps
+
+
+// Hotel mini-maps
+
+var _hotelMapsDone = {};
+function initHotelMaps() {
+  var hotels = [{id:"map-hotel-0",lat:40.417,lon:-3.704,nombre:"Nômade Temple Madrid",dir:"Gran Vía, 11, Centro, Madrid, 28013, España",ciudad:"Madrid",fi:"2026-07-09",fo:"2026-07-13",color:"#7b2d8b"},{id:"map-hotel-1",lat:43.711,lon:7.262,nombre:"Palais Saleya Boutique Hôtel",dir:"21 rue du marché, Niza 06300, Francia",ciudad:"Niza",fi:"2026-07-13",fo:"2026-07-15",color:"#0077b6"},{id:"map-hotel-2",lat:43.837,lon:4.36,nombre:"Margaret - Hôtel Chouleur",dir:"6 Rue Fresque, Nîmes 30000, Francia",ciudad:"Nîmes",fi:"2026-07-15",fo:"2026-07-17",color:"#e67e22"},{id:"map-hotel-3",lat:42.288,lon:3.277,nombre:"Gaia Apartments & Lofts Cadaqués",dir:"Norio 1-3 Cadaqués Girona, Cadaqués, 17488, España",ciudad:"Cadaqués",fi:"2026-07-17",fo:"2026-07-18",color:"#117a65"},{id:"map-hotel-4",lat:41.385,lon:2.173,nombre:"Hotel Casa Luz",dir:"Ronda de la Universitat 1, Eixample, 08007 Barcelona, España",ciudad:"Barcelona",fi:"2026-07-18",fo:"2026-07-20",color:"#c0392b"}];
+  var ovEl = document.getElementById('map-hotel-overview');
+  if (ovEl && !_hotelMapsDone['overview']) {
+    _hotelMapsDone['overview'] = true;
+    var ov = L.map('map-hotel-overview',{zoomControl:true,attributionControl:false,scrollWheelZoom:false}).setView([42.3276,2.6736],5);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:19,attribution:''}).addTo(ov);
+    hotels.forEach(function(h) {
+      var ic = L.divIcon({className:'',html:'<div style="width:30px;height:30px;background:'+h.color+';border-radius:50%;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff">'+h.ciudad.substring(0,3).toUpperCase()+'</div>',iconSize:[30,30],iconAnchor:[15,15]});
+      var popup = '<b>'+h.nombre+'</b><br><small>'+h.ciudad+(h.fi?' · '+h.fi+' → '+h.fo:'')+'</small>'+(h.dir?'<br><small>'+h.dir+'</small>':'');
+      L.marker([h.lat,h.lon],{icon:ic}).addTo(ov).bindPopup(popup);
+    });
+    setTimeout(function(){ov.invalidateSize({animate:false});},200);
+  }
+  hotels.forEach(function(h) {
+    if (_hotelMapsDone[h.id]) return;
+    var el = document.getElementById(h.id);
+    if (!el) return;
+    _hotelMapsDone[h.id] = true;
+    var m = L.map(h.id,{zoomControl:true,attributionControl:false,dragging:true,scrollWheelZoom:false,touchZoom:true,doubleClickZoom:true}).setView([h.lat,h.lon],15);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:19,attribution:''}).addTo(m);
+    var ic = L.divIcon({className:'',html:'<div style="width:28px;height:28px;background:'+h.color+';border-radius:50%;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff">'+h.ciudad.substring(0,3).toUpperCase()+'</div>',iconSize:[28,28],iconAnchor:[14,14]});
+    L.marker([h.lat,h.lon],{icon:ic}).addTo(m).bindPopup('<b>'+h.nombre+'</b>'+(h.dir?'<br><small>'+h.dir+'</small>':'')).openPopup();
+    setTimeout(function(){m.invalidateSize({animate:false});},100);
+    setTimeout(function(){m.invalidateSize({animate:false});},500);
+  });
+}
+
+// Activity mini-maps
+
+</script>
+</body>
+</html>
