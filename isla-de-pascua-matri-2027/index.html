@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Isla de Pascua Matri 2027</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#141309;--bg2:#1a1910;--card-bg:#1e1c12;--card-border:rgba(255,255,255,.09);
+  --gold:#d4a843;--text:#f0ede0;--dim:#8a8870;--muted:#6a6655;
+  --blue:#5aabff;--green:#30d158;--red:#ff453a;--amber:#ff9f0a;
+  --accent:#d4a843;
+  --blue-light:rgba(90,171,255,.12);--green-light:rgba(48,209,88,.1);
+  --red-light:rgba(255,69,58,.1);--amber-light:rgba(255,159,10,.1);
+}
+html,body{height:auto;overflow:auto}
+body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;
+  background:var(--bg);color:var(--text);font-size:16px;
+  display:flex;flex-direction:column;-webkit-font-smoothing:antialiased}
+
+.sidebar{display:none!important}
+.alertas-strip{display:none!important}
+.mobile-map-tab{display:none!important}
+
+/* iOS bottom nav — mobile only */
+.ios-nav{
+  display:flex;position:fixed;bottom:0;left:0;right:0;
+  background:rgba(28,28,26,.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-top:0.5px solid rgba(255,255,255,.12);
+  padding:6px 0 max(8px,env(safe-area-inset-bottom));
+  z-index:999;overflow-x:auto;scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;gap:0;
+}
+.ios-nav::-webkit-scrollbar{display:none}
+.ios-nav-item{
+  flex:1;min-width:56px;display:flex;flex-direction:column;align-items:center;
+  gap:2px;padding:4px 2px 2px;background:none;border:none;
+  color:rgba(255,255,255,.45);font-size:9px;font-weight:500;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;
+  font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;
+}
+.ios-nav-item.active{color:var(--gold)}
+.ios-nav-ico{font-size:20px;line-height:1;display:block}
+.ios-nav-lbl{display:block;font-size:9px;font-weight:500;letter-spacing:.1px}
+
+/* Extra bottom padding so content doesn't hide behind ios-nav */
+.content-left{padding-bottom:80px!important}
+.page-tabs{display:none}
+
+.main-area{flex:1;display:flex;flex-direction:column;min-width:0}
+
+/* HERO */
+.topbar{background:var(--bg);padding:52px 20px 0;display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;position:relative}
+.trip-title{font-size:40px;font-weight:800;letter-spacing:-.8px;color:var(--gold);line-height:1.1}
+.trip-period{font-size:14px;color:var(--dim);margin-top:5px;letter-spacing:.1px;padding-bottom:14px}
+.hero-countdown{font-size:13px;color:var(--dim);padding-bottom:14px}
+.hero-countdown strong{color:var(--text);font-weight:700}
+.trip-title-block{padding-bottom:0}
+
+/* STATS — bordered boxes, always visible */
+.stats-row{background:var(--bg);display:flex;align-items:stretch;flex-shrink:0;
+  padding:0 20px 20px;gap:8px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+.stats-row::-webkit-scrollbar{display:none}
+.stat{background:transparent;border:1px solid rgba(255,255,255,.14);border-radius:10px;
+  padding:10px 14px;min-width:80px;flex-shrink:0;display:flex;flex-direction:column;justify-content:center}
+.stat:last-child{flex:1;min-width:140px}
+.stat-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--dim);margin-bottom:4px}
+.stat-val{font-size:20px;font-weight:700;line-height:1;color:var(--text);letter-spacing:-.3px}
+.stat-sub{font-size:11px;color:var(--dim);margin-top:2px}
+.status-pills{display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;align-items:center;scrollbar-width:none}
+.status-pills::-webkit-scrollbar{display:none}
+.sp{display:inline-flex;align-items:center;gap:3px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+.sp-red{background:rgba(255,69,58,.2);color:#ff6b63}
+.sp-green{background:rgba(48,209,88,.2);color:#30d158}
+.sp-amber{background:rgba(255,159,10,.2);color:#ff9f0a}
+
+/* ADV in resumen */
+.adv-section{padding:0 20px 12px;display:flex;flex-direction:column;gap:6px}
+.adv-title{font-size:10px;font-weight:700;color:var(--red);letter-spacing:.12em;margin-bottom:2px}
+.adv-cap{background:rgba(255,69,58,.12);border:1px solid rgba(255,69,58,.2);border-radius:10px;padding:10px 14px;font-size:13px;color:var(--text);line-height:1.45}
+
+/* TABS — always visible, scrollable */
+.page-tabs{display:flex;background:var(--bg);border-bottom:1px solid var(--card-border);
+  padding:2px 12px;overflow-x:auto;scrollbar-width:none;flex-wrap:nowrap;flex-shrink:0;align-items:center}
+.page-tabs::-webkit-scrollbar{display:none}
+.ptab{display:flex;height:38px;padding:0 18px;font-size:17px;font-weight:600;
+  color:var(--dim);cursor:pointer;border:1.5px solid transparent;border-radius:8px;
+  align-items:center;gap:4px;white-space:nowrap;flex-shrink:0;transition:all .15s;margin:6px 4px 6px 0}
+.ptab:hover{color:var(--text);border-color:rgba(255,255,255,.15);background:rgba(255,255,255,.06)}
+.ptab.active{color:#000;background:var(--gold);border-color:var(--gold);font-weight:700}
+.ptab-count{font-size:10px;font-weight:700;padding:1px 5px;border-radius:8px}
+.ptab-count.err{background:rgba(255,69,58,.2);color:#ff6b63}
+.ptab-count.ok{background:rgba(48,209,88,.2);color:#30d158}
+.ptab-count.warn{background:rgba(255,159,10,.2);color:#ff9f0a}
+
+/* CONTENT */
+.content-split{display:flex;flex-direction:column;overflow:visible}
+.content-left{flex:1;overflow:visible;padding:14px 16px 32px}
+.content-right{display:none;width:100%;flex-direction:column}
+.content-right.mobile-visible{display:flex}
+.content-left.mobile-hidden{display:none}
+.map-title-bar{padding:12px 18px;font-size:10px;font-weight:700;color:var(--dim);
+  text-transform:uppercase;letter-spacing:.1em;background:var(--bg2);
+  display:flex;align-items:center;gap:6px;flex-shrink:0;border-bottom:1px solid var(--card-border)}
+.map-wrap{padding:0 16px 16px;flex:1}
+#map{height:calc(100dvh - 180px);min-height:320px;border-radius:14px;overflow:hidden}
+.page{display:none}.page.active{display:block}
+
+/* CARDS */
+.card{background:var(--card-bg);border-radius:14px;border:1px solid var(--card-border);
+  margin-bottom:10px;overflow:hidden}
+.card-header{padding:14px 16px 8px;border-bottom:1px solid var(--card-border);display:flex;align-items:center;gap:10px}
+.ch-icon{font-size:18px}
+.ch-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--dim);flex:1}
+.ch-title-xl{font-size:22px;text-transform:none;font-weight:700;letter-spacing:-.4px;color:var(--text);flex:1}
+.ch-title-hotel{font-size:16px;text-transform:none;font-weight:700;letter-spacing:-.3px;color:var(--text);flex:1;line-height:1.2}
+.card-body{padding:0 16px 14px 36px}
+.card-entity-name{font-size:20px;font-weight:700;color:var(--text);margin-top:5px;line-height:1.2;letter-spacing:-.3px}
+
+/* TIMELINE */
+.timeline{position:relative;padding-left:36px}
+.timeline::before{content:'';position:absolute;left:14px;top:0;bottom:0;width:1px;background:rgba(255,255,255,.1)}
+.tl-item{position:relative;margin-bottom:16px;padding-left:4px}
+.tl-item:last-child{margin-bottom:0}
+.tl-dot{position:absolute;left:-25px;top:4px;width:12px;height:12px;border-radius:50%;border:2px solid var(--card-bg);background:var(--dim)}
+.tl-dot.red{background:var(--red);box-shadow:0 0 0 2px rgba(255,69,58,.25)}
+.tl-dot.green{background:var(--green);box-shadow:0 0 0 2px rgba(48,209,88,.2)}
+.tl-dot.blue{background:var(--blue);box-shadow:0 0 0 2px rgba(90,171,255,.2)}
+.tl-dot.amber{background:var(--amber);box-shadow:0 0 0 2px rgba(255,159,10,.2)}
+.tl-day-header{font-size:20px;font-weight:800;text-transform:none;letter-spacing:-.3px;
+  color:var(--gold);margin:22px 0 10px -36px;padding:0 0 8px 4px;
+  border-bottom:.5px solid rgba(255,255,255,.12)}
+.tl-day-header:first-child{margin-top:8px}
+.tl-day-sub{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;margin-top:1px}
+.tl-main{font-size:17px;font-weight:600;line-height:1.3;color:var(--text)}
+.tl-sub{font-size:15px;color:var(--dim);margin-top:4px;line-height:1.5}
+.tl-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+.tag{font-family:monospace;font-size:11px;padding:2px 7px;border-radius:5px;font-weight:500}
+.tag-blue{background:rgba(90,171,255,.12);color:var(--blue)}
+.tag-green{background:rgba(48,209,88,.1);color:var(--green)}
+.tl-stay{border-left:2px solid var(--blue);background:rgba(90,171,255,.07);border-radius:0 8px 8px 0;padding:8px 12px;margin-top:5px}
+
+/* FLIGHTS */
+.flight-row{padding:12px 0;border-bottom:.5px solid var(--card-border)}
+.flight-row:last-child{border-bottom:none}
+.fr-head{display:flex;align-items:center;gap:7px;margin-bottom:8px;flex-wrap:wrap}
+.airline-pill{display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:14px;font-size:12px;font-weight:700;color:#fff}
+.pax-chip{display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.08);border-radius:10px;padding:3px 8px;font-size:12px;font-weight:500;color:var(--text)}
+.pax-dot{width:13px;height:13px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff}
+
+.fr-chip{font-family:monospace;font-size:13px;font-weight:700;padding:3px 9px;border-radius:8px;white-space:nowrap}
+.fr-pax-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;margin-bottom:4px}
+.fr-route{display:flex;align-items:center;gap:8px}
+.fr-city{min-width:65px}
+.fr-iata{font-size:28px;font-weight:800;letter-spacing:-1px;line-height:1;color:var(--text)}
+.fr-name{font-size:12px;color:var(--dim);text-transform:uppercase;letter-spacing:.03em}
+.fr-time{font-size:21px;font-weight:600;margin-top:2px;color:var(--text)}
+.fr-date{font-size:11px;color:var(--muted)}
+.fr-date-hdr{font-size:22px;font-weight:800;letter-spacing:-.4px;color:var(--gold);margin-bottom:0;line-height:1.1}
+.card-date-bar{display:flex;align-items:center;gap:10px;padding:10px 16px 10px 4px;border-bottom:.5px solid rgba(255,255,255,.10)}
+.card-map-row{display:flex;gap:14px;align-items:stretch}
+@media(max-width:767px){
+  .card-map-row{flex-direction:column}
+  .card-map-row>div:last-child{width:100%!important;min-height:220px}
+}
+.flight-row .fr-date-hdr{margin-left:-36px;padding-left:4px;margin-bottom:16px}
+.fr-mid{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:0 6px}
+.fr-line-wrap{width:100%;position:relative;height:14px}
+.fr-line{position:absolute;left:0;right:0;top:50%;height:.5px;background:rgba(255,255,255,.15)}
+.fr-plane{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:13px;background:var(--card-bg);padding:0 4px}
+.fr-dur{font-size:13px;color:var(--dim);font-weight:500}
+.booking-tag{font-family:monospace;font-size:14px;color:var(--blue);background:rgba(90,171,255,.1);padding:3px 8px;border-radius:5px;display:inline-block;font-weight:600}
+.badge{display:inline-flex;align-items:center;gap:2px;padding:3px 9px;border-radius:12px;font-size:13px;font-weight:600}
+.badge-green{background:rgba(48,209,88,.15);color:var(--green)}
+.badge-red{background:rgba(255,69,58,.15);color:var(--red)}
+.badge-amber{background:rgba(255,159,10,.15);color:var(--amber)}
+
+/* HOTELS */
+.hotel-missing{background:rgba(255,69,58,.08);border:1.5px dashed rgba(255,69,58,.3);border-radius:12px;padding:18px;text-align:center}
+.info-row{display:flex;justify-content:space-between;padding:11px 0;border-bottom:.5px solid var(--card-border);font-size:16px}
+.info-row:last-child{border-bottom:none}
+.info-lbl{color:var(--dim)}
+.info-val{font-weight:500;text-align:right;max-width:65%;color:var(--text)}
+.mono{font-family:monospace;font-size:13px;color:var(--blue);font-weight:600}
+
+/* DOCS */
+.doc-row{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:.5px solid var(--card-border)}
+.doc-row:last-child{border-bottom:none}
+.doc-icon{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.doc-title{font-size:17px;font-weight:600;color:var(--text)}
+.doc-sub{font-size:14px;color:var(--dim);margin-top:2px;line-height:1.4}
+.doc-right{margin-left:auto}
+
+/* CHECKLIST */
+.check-row{display:flex;align-items:flex-start;gap:12px;padding:11px 0;border-bottom:.5px solid var(--card-border);cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent}
+.check-row:last-child{border-bottom:none}
+.check-circle{width:22px;height:22px;border-radius:50%;border:2px solid rgba(255,255,255,.2);flex-shrink:0;transition:all .2s;display:flex;align-items:center;justify-content:center;font-size:12px;color:transparent}
+.check-circle.done{background:var(--green);border-color:var(--green);color:#fff}
+.check-title{font-size:17px;font-weight:400;transition:color .2s;line-height:1.35;color:var(--text)}
+.check-row.done .check-title{color:var(--muted);text-decoration:line-through}
+
+/* WARNINGS */
+.warn-row{padding:12px 14px;border-radius:10px;border-left:3px solid;font-size:15px;line-height:1.55;margin-bottom:8px;color:var(--text)}
+.warn-row:last-child{margin-bottom:0}
+.warn-row.red{border-color:var(--red);background:rgba(255,69,58,.1)}
+.warn-row.amber{border-color:var(--amber);background:rgba(255,159,10,.1)}
+.warn-row.blue{border-color:var(--blue);background:rgba(90,171,255,.08)}
+.warn-row strong{display:flex;align-items:center;margin-bottom:4px}
+
+/* BUDGET */
+.budget-row{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:.5px solid var(--card-border);font-size:16px;color:var(--text)}
+.budget-row:last-child{border-bottom:none}
+
+/* RESTAURANTS */
+.rest-map{height:200px;border-radius:10px;overflow:hidden;margin-top:14px;border:.5px solid var(--card-border)}
+.rest-addr{font-size:11px;color:var(--dim);margin-bottom:8px;line-height:1.4}
+
+::-webkit-scrollbar{width:0;height:0}
+
+/* DESKTOP */
+@media(min-width:768px){
+  html,body{height:100%;overflow:hidden}
+  body{font-size:14px;flex-direction:column;background:var(--bg)}
+  .main-area{display:grid;grid-template-rows:auto auto auto 1fr;height:100vh;overflow:hidden}
+  .topbar{padding:24px 32px 0;flex-direction:row;align-items:flex-end;min-height:auto;gap:24px;border-bottom:none}
+  .trip-title{font-size:52px;letter-spacing:-1.5px}
+  .trip-period{font-size:13px;padding-bottom:12px;align-self:flex-end;margin-left:4px}
+  .hero-countdown{align-self:flex-end;padding-bottom:12px;font-size:12px}
+  .stats-row{padding:12px 32px;gap:10px;border-bottom:1px solid var(--card-border)}
+  .stat{padding:10px 18px}
+  .ios-nav{display:none!important}
+  .page-tabs{display:flex;padding:0 28px}
+  .content-left{padding-bottom:16px!important}
+  .ptab{height:36px;font-size:16px;padding:0 18px;margin:5px 4px 5px 0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+  .content-split{display:grid;grid-template-columns:1fr 40%;height:100%;overflow:hidden}
+  .content-left{overflow-y:auto;padding:16px 20px;min-width:0;padding-bottom:16px}
+  .content-right{display:flex;flex-direction:column;height:100%;border-left:1px solid var(--card-border);overflow:hidden}
+  .content-left.mobile-hidden{display:block}
+  .map-wrap{flex:1;min-height:0;overflow:hidden;position:relative;padding:0}
+  #map{position:absolute;top:12px;left:0;bottom:12px;right:16px;border-radius:10px;min-height:0;height:auto}
+  .card{border-radius:10px;margin-bottom:8px}
+  .card-header{padding:10px 14px}
+  .card-body{padding:0 14px 12px 32px}
+  .tl-main{font-size:15px}
+  .tl-sub{font-size:14px}
+  .tl-day-header{font-size:18px;margin-left:-32px}
+  .fr-iata{font-size:24px}
+  .fr-date-hdr{font-size:20px}
+  .flight-row .fr-date-hdr{margin-left:-32px;padding-left:4px}
+  .card-date-bar{padding-left:0}
+  .fr-time{font-size:18px}
+  .fr-plane{background:var(--card-bg)}
+  .fr-line{background:rgba(255,255,255,.12)}
+  .info-row{font-size:15px}
+  .doc-title{font-size:15px}
+  .doc-sub{font-size:13px}
+  .check-title{font-size:15px}
+  .budget-row{font-size:15px}
+  .warn-row{font-size:14px}
+  .rest-map{height:180px;border-radius:8px}
+}
+</style>
+<style>:root{--accent:#8e44ad}</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sb-nav">
+    <div class="sb-item active" onclick="showPage('resumen',this)">
+      <span class="sb-label">Resumen</span>
+    </div>
+    <div class="sb-divider"></div>
+    <div class="sb-section-lbl">Este viaje</div>
+    <div class="sb-item" onclick="showPage('vuelos',this)">
+      <span class="sb-label">Transporte</span>
+      <span class="sb-badge-g">2</span>
+    </div>
+    <div class="sb-item" onclick="showPage('hoteles',this)">
+      <span class="sb-label">Hoteles</span>
+      <span class="sb-badge">!</span>
+    </div>
+    <div class="sb-item" onclick="showPage('restaurantes',this)">
+      <span class="sb-label">Restaurantes</span>
+      
+    </div>
+    <div class="sb-item" onclick="showPage('actividades',this)">
+      <span class="sb-label">Actividades</span>
+      
+    </div>
+    <div class="sb-item" onclick="showPage('checklist',this)" style="display:none">
+      <span class="sb-label">Checklist</span>
+      <span class="sb-badge-a">3</span>
+    </div>
+    <div class="sb-item" onclick="showPage('presupuesto',this)">
+      <span class="sb-label">Presupuesto</span>
+    </div>
+    <div class="sb-item" onclick="showPage('documentos',this)">
+      <span class="sb-label">Documentos</span>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main-area">
+
+  <div class="topbar">
+    <span style="position:absolute;top:10px;right:14px;display:flex;gap:5px;align-items:center;font-family:Inter,sans-serif">
+      <span style="background:#FF3B30;color:#000;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;line-height:1.4">Última actualización: 17 Aug 2026 17:34</span>
+    </span>
+    <div class="trip-title">Isla de Pascua Matri 2027</div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat">
+      <div class="stat-lbl">Fechas</div>
+      <div class="stat-val" style="font-size:16px">3 Abr – 6 Abr</div>
+      <div class="stat-sub">3 días</div>
+    </div>
+    <div class="stat">
+      <div class="stat-lbl">Días para partir</div>
+      <div class="stat-val" style="color:var(--blue)">229</div>
+    </div>
+    <div class="stat">
+      <div class="stat-lbl">Días para cancelar</div>
+      <div class="stat-val" style="color:var(--dim)">—</div>
+      
+      
+    </div>
+  </div>
+
+  <div class="page-tabs">
+    <div class="ptab active" onclick="showPage('resumen',this)">Resumen</div>
+    <div class="ptab" onclick="showPage('vuelos',this)">Transporte <span class="ptab-count ok">2</span></div>
+    <div class="ptab" onclick="showPage('hoteles',this)">Hoteles <span class="ptab-count err">!</span></div>
+    <div class="ptab" onclick="showPage('restaurantes',this)">Restaurantes </div>
+    <div class="ptab" onclick="showPage('actividades',this)">Actividades </div>
+    <div class="ptab" onclick="showPage('presupuesto',this)">Presupuesto</div>
+    <div class="ptab" onclick="showPage('documentos',this)">Documentos <span class="ptab-count ok">3</span></div>
+    <div class="ptab mobile-map-tab" style="display:none" onclick="showPage('mapa',this)">🗺 Mapa</div>
+  </div>
+
+  <div class="content-split">
+    <div class="content-left">
+      <div id="page-resumen" class="page active">
+<div class="card"><div class="card-header"><span class="ch-icon">⚠️</span><span class="ch-title">Advertencias e inconsistencias</span></div><div class="card-body"><div style="background:#ffd60a;color:#000;border-radius:10px;padding:10px 14px;margin-bottom:8px;font-size:14px;font-weight:500;border-left:3px solid #b8860b"><strong style="display:block;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;color:#7a5c00">⚠ CAMBIO VUELO</strong>⚠ CAMBIO DE HORARIO: LA841 SCL→Rapa Nui del 3 Abr 2027 ahora sale 08:35 (antes 08:40). Causa: cambio de hora de verano en Chile. Confirmar hora de llegada en Mis Viajes.</div><div style="background:#ffd60a;color:#000;border-radius:10px;padding:10px 14px;margin-bottom:8px;font-size:14px;font-weight:500;border-left:3px solid #b8860b"><strong style="display:block;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;color:#7a5c00">⛔ SIN ALOJAMIENTO</strong>Sin alojamiento: 3 noches en Rapa Nui (3, 4 y 5 Abr) — hotel sin reservar.</div></div></div>
+<div class="card">
+  <div class="card-header" style="justify-content:center"><span class="ch-title-xl" style="flex:none;text-align:center;color:var(--gold)">Cronograma</span></div>
+  <div class="card-body"><div class="tl-day-header">Sáb 3 Abr 2027</div><div class="timeline">
+<div class="tl-item">
+  <div class="tl-dot blue"></div>
+  <div class="tl-main" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+    <span>IDA ✈ &nbsp;Santiago de Chile → Rapa Nui (Isla de Pascua)</span>
+    <div style="display:flex;flex-wrap:wrap;gap:4px"><span style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,.07);border:1px solid #6366f140;border-radius:20px;padding:2px 8px 2px 4px;font-size:11px;color:var(--fg)"><span style="width:16px;height:16px;border-radius:50%;background:#6366f1;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#000">R</span>Rodrigo</span><span style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,.07);border:1px solid #e879f940;border-radius:20px;padding:2px 8px 2px 4px;font-size:11px;color:var(--fg)"><span style="width:16px;height:16px;border-radius:50%;background:#e879f9;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#000">M</span>Maria</span></div>
+  </div>
+  <div class="tl-sub"><span style="font-weight:700;color:var(--accent,#007AFF);font-size:12px">LA841</span> · Santiago de Chile 08:35 → Rapa Nui (Isla de Pascua) 12:15<br>Asientos 23A – 23B</div>
+  <div class="tl-tags"><span class="tag tag-blue">••••YJ</span></div>
+</div>
+<div class="tl-item">
+  <div class="tl-dot red"></div>
+  <div class="tl-main">📍 Rapa Nui, Chile</div>
+  <div class="tl-stay" style="border-color:var(--red);background:var(--red-light)">
+  <div style="font-size:11px;font-weight:600;color:var(--red)">⛔ Hotel en Rapa Nui — Sin reservar</div>
+  <div style="font-size:10px;color:#b91c1c;margin-top:2px">3 noches</div>
+</div>
+</div></div><div class="tl-day-header">Mar 6 Abr 2027</div><div class="timeline">
+<div class="tl-item">
+  <div class="tl-dot red"></div>
+  <div class="tl-main" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+    <span>VUELTA ✈ &nbsp;Rapa Nui → Santiago de Chile</span>
+    <div style="display:flex;flex-wrap:wrap;gap:4px"><span style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,.07);border:1px solid #6366f140;border-radius:20px;padding:2px 8px 2px 4px;font-size:11px;color:var(--fg)"><span style="width:16px;height:16px;border-radius:50%;background:#6366f1;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#000">R</span>Rodrigo</span><span style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,.07);border:1px solid #e879f940;border-radius:20px;padding:2px 8px 2px 4px;font-size:11px;color:var(--fg)"><span style="width:16px;height:16px;border-radius:50%;background:#e879f9;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#000">M</span>Maria</span></div>
+  </div>
+  <div class="tl-sub"><span style="font-weight:700;color:var(--accent,#007AFF);font-size:12px">LA842</span> · Rapa Nui 14:40 → Santiago de Chile 21:15<br>Asientos 23A – 23B</div>
+  <div class="tl-tags"><span class="tag tag-blue">••••YJ</span></div>
+</div></div></div>
+</div></div>
+      <div id="page-vuelos" class="page">
+<div class="card" style="margin-bottom:20px">
+  <div class="card-body">
+    <div class="flight-row">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+        <div class="fr-date-hdr" style="margin-bottom:0">Sáb 3 Abr 2027</div>
+        <div class="fr-pax-row" style="margin-top:0;margin-bottom:0"><div class="pax-chip"><div class="pax-dot" style="background:#6366f1">R</div> Rodrigo</div><div class="pax-chip"><div class="pax-dot" style="background:#e879f9">M</div> Maria</div></div>
+      </div>
+      <div class="fr-head">
+        <div class="airline-pill" style="background:var(--blue)">LATAM</div>
+        <span class="fr-chip" style="background:rgba(90,171,255,.15);color:var(--blue)">LA841</span>
+        <span class="fr-chip" style="background:rgba(48,209,88,.12);color:var(--green)">Economy Light</span>
+        <span class="fr-chip" style="background:rgba(212,168,67,.15);color:var(--gold)">••••YJ</span>
+        
+      </div>
+      <div class="fr-route">
+        <div class="fr-city">
+          <div class="fr-iata">Santiago de Chile</div>
+          <div class="fr-time">08:35</div>
+        </div>
+        <div class="fr-mid">
+          <div class="fr-dur">Economy Light</div>
+          <div class="fr-line-wrap"><div class="fr-line"></div><span class="fr-plane">✈</span></div>
+          <div class="fr-dur">LA841 · Horario modificado por cambio de hora de verano en Chile (aviso LATAM 18 Jul 2026, 'Fe de erratas').</div>
+        </div>
+        <div class="fr-city" style="text-align:right">
+          <div class="fr-iata">Rapa Nui (Isla de Pascua)</div>
+          <div class="fr-time">12:15</div>
+          
+        </div>
+      </div>
+      <div style="margin-top:6px;display:flex;gap:5px"><span class="booking-tag">Asientos: 23A – 23B</span></div>
+      <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;align-items:center"><span class="booking-tag">•••••••••••FG</span><span style="font-size:11px;font-weight:600;color:var(--green);margin-left:auto">CLP 91.652 + 74.572 millas LATAM Pass</span></div>
+    </div>
+  </div>
+</div>
+<div class="card" style="margin-bottom:20px">
+  <div class="card-body">
+    <div class="flight-row">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+        <div class="fr-date-hdr" style="margin-bottom:0">Mar 6 Abr 2027</div>
+        <div class="fr-pax-row" style="margin-top:0;margin-bottom:0"><div class="pax-chip"><div class="pax-dot" style="background:#6366f1">R</div> Rodrigo</div><div class="pax-chip"><div class="pax-dot" style="background:#e879f9">M</div> Maria</div></div>
+      </div>
+      <div class="fr-head">
+        <div class="airline-pill" style="background:var(--blue)">LATAM</div>
+        <span class="fr-chip" style="background:rgba(90,171,255,.15);color:var(--blue)">LA842</span>
+        <span class="fr-chip" style="background:rgba(48,209,88,.12);color:var(--green)">Economy Light</span>
+        <span class="fr-chip" style="background:rgba(212,168,67,.15);color:var(--gold)">••••YJ</span>
+        
+      </div>
+      <div class="fr-route">
+        <div class="fr-city">
+          <div class="fr-iata">Rapa Nui</div>
+          <div class="fr-time">14:40</div>
+        </div>
+        <div class="fr-mid">
+          <div class="fr-dur">Economy Light</div>
+          <div class="fr-line-wrap"><div class="fr-line"></div><span class="fr-plane">✈</span></div>
+          <div class="fr-dur">LA842 · Directo</div>
+        </div>
+        <div class="fr-city" style="text-align:right">
+          <div class="fr-iata">Santiago de Chile</div>
+          <div class="fr-time">21:15</div>
+          
+        </div>
+      </div>
+      <div style="margin-top:6px;display:flex;gap:5px"><span class="booking-tag">Asientos: 23A – 23B</span></div>
+      
+    </div>
+  </div>
+</div></div>
+      <div id="page-hoteles" class="page">
+<div class="card">
+  <div class="card-header">
+    <span class="ch-icon">🗿</span>
+    <span class="ch-title">Rapa Nui</span>
+    <span class="badge badge-red" style="margin-left:auto">⛔ Sin reservar</span>
+  </div>
+  <div class="card-body">
+    <div class="hotel-missing">
+      <div style="font-size:28px;margin-bottom:6px">🏨</div>
+      <div style="font-size:13px;font-weight:700;color:var(--red);margin-bottom:4px">Hotel sin reservar</div>
+      <div style="font-size:11px;color:#b91c1c">3 Abr 2027 – 6 Abr 2027 · 3 noches</div>
+    </div>
+  </div>
+</div></div>
+      <div id="page-documentos" class="page"><div class="card"><div class="card-header"><span class="ch-icon">📄</span><span class="ch-title">Documentos del viaje</span></div><div class="card-body">
+<div class="doc-row"  style="">
+  <div class="doc-icon" style="background:#3b82f618;color:#3b82f6">✈</div>
+  <div style="flex:1;min-width:0">
+    <div class="doc-title">Vuelo LATAM Santiago ⇄ Rapa Nui</div>
+    <div class="doc-sub">••••YJ · 03-06 abr 2027 · Economy Light · Asientos 23A-23B</div>
+  </div>
+  <div class="doc-right"><span class="badge badge-green">✓</span></div>
+</div>
+<div class="doc-row"  style="">
+  <div class="doc-icon" style="background:#3b82f618;color:#3b82f6">✈</div>
+  <div style="flex:1;min-width:0">
+    <div class="doc-title">LA841 Santiago → Rapa Nui</div>
+    <div class="doc-sub">03/04/2027 08:35 - Reserva ••••YJ (cambio de horario)</div>
+  </div>
+  <div class="doc-right"><span class="badge badge-green">✓</span></div>
+</div>
+<div class="doc-row"  style="">
+  <div class="doc-icon" style="background:#f9731618;color:#f97316">✈</div>
+  <div style="flex:1;min-width:0">
+    <div class="doc-title">Aviso LATAM · cambio de horario LA841 (Fe de erratas)</div>
+    <div class="doc-sub">••••YJ · 3 Abr 2027 · nueva salida 08:35 (antes 08:40)</div>
+  </div>
+  <div class="doc-right"><span class="badge badge-green">✓</span></div>
+</div></div></div>
+<div id="doc-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:10000;background:rgba(0,0,0,.93);overflow-y:auto;-webkit-overflow-scrolling:touch" onclick="if(event.target===this)closeDocModal()">
+  <button onclick="closeDocModal()" style="position:fixed;top:14px;right:16px;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:22px;width:36px;height:36px;border-radius:50%;cursor:pointer;z-index:10001;display:flex;align-items:center;justify-content:center;line-height:1">×</button>
+  <div id="doc-modal-inner" style="padding:56px 12px 32px;max-width:720px;margin:0 auto;text-align:center"></div>
+</div>
+<script>
+var _DOCS=[];
+var _docMap={};
+_DOCS.forEach(function(d){_docMap[d.i]=d;});
+function openDoc(i){
+  var d=_docMap[i]; if(!d) return;
+  var src='data:'+d.mime+';base64,'+d.b64;
+  var inner=document.getElementById('doc-modal-inner');
+  if(d.mime.startsWith('image/')){
+    inner.innerHTML='<div style="color:#fff;font-size:14px;margin-bottom:12px">'+d.titulo+'</div><img src="'+src+'" style="max-width:100%;border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,.4)">';
+  } else {
+    inner.innerHTML='<div style="color:#fff;font-size:14px;margin-bottom:12px">'+d.titulo+'</div><iframe src="'+src+'" style="width:100%;height:80vh;border:none;border-radius:10px"></iframe>';
+  }
+  document.getElementById('doc-modal').style.display='block';
+  document.body.style.overflow='hidden';
+}
+function closeDocModal(){
+  document.getElementById('doc-modal').style.display='none';
+  document.getElementById('doc-modal-inner').innerHTML='';
+  document.body.style.overflow='';
+}
+</script></div>
+      <div id="page-checklist" class="page">
+<div class="card">
+  <div class="card-header">
+    <span class="ch-title">Pendientes del viaje</span>
+    <span class="badge badge-red" style="margin-left:auto">3</span>
+  </div>
+  <div class="card-body"><div class="check-row"><div class="check-circle" id="cc-trip-0"></div><div><div class="check-title">Reservar hotel en Rapa Nui (3–6 Abr)</div></div></div><div class="check-row"><div class="check-circle" id="cc-trip-1"></div><div><div class="check-title">Check-in LATAM online (24h antes del 3 Abr 2027)</div></div></div><div class="check-row"><div class="check-circle" id="cc-trip-2"></div><div><div class="check-title">Seguro de viaje</div></div></div></div>
+</div>
+<div class="card">
+  <div class="card-header"><span class="ch-title">Travel Basics — Equipaje</span></div>
+  <div class="card-body"><div class="check-row"><div class="check-circle" id="cc-b1-0"></div><div><div class="check-title">SEGURO VISA</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-1"></div><div><div class="check-title">Remedio dormir avión</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-2"></div><div><div class="check-title">Tapones oído bolso mano</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-3"></div><div><div class="check-title">Antiácido</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-4"></div><div><div class="check-title">Antiinflamatorio bolso mano</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-5"></div><div><div class="check-title">Remedios en bolso mano</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-6"></div><div><div class="check-title">Checkin online</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-7"></div><div><div class="check-title">Earpods</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-8"></div><div><div class="check-title">Polerón avión</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-9"></div><div><div class="check-title">Cortavientos</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-10"></div><div><div class="check-title">Libros</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-11"></div><div><div class="check-title">Anteojos repuesto</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-12"></div><div><div class="check-title">iPad</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-13"></div><div><div class="check-title">Cargador iPhone</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-14"></div><div><div class="check-title">Cargador Reloj</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-15"></div><div><div class="check-title">Cargador y enchufe bolso mano</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-16"></div><div><div class="check-title">Placa dientes</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-17"></div><div><div class="check-title">Anteojos lectura</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-18"></div><div><div class="check-title">Audífonos avión</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-19"></div><div><div class="check-title">Billetera</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-20"></div><div><div class="check-title">Tapones oído</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-21"></div><div><div class="check-title">Remedios</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-22"></div><div><div class="check-title">Máquina afeitar</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-23"></div><div><div class="check-title">Crema facial</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-24"></div><div><div class="check-title">Crema cuerpo</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-25"></div><div><div class="check-title">Shampoo</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-26"></div><div><div class="check-title">Acondicionador</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-27"></div><div><div class="check-title">Pasta dientes + cepillo</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-28"></div><div><div class="check-title">Desodorante</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-29"></div><div><div class="check-title">Perfume</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-30"></div><div><div class="check-title">Afeitadora eléctrica</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-31"></div><div><div class="check-title">Adaptador corriente</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-32"></div><div><div class="check-title">Neceser</div></div></div><div class="check-row"><div class="check-circle" id="cc-b1-33"></div><div><div class="check-title">Anteojos sol</div></div></div></div>
+</div>
+<div class="card">
+  <div class="card-header"><span class="ch-title">Travel Basics — Ropa y accesorios</span></div>
+  <div class="card-body"><div class="check-row"><div class="check-circle" id="cc-b2-0"></div><div><div class="check-title">Ropa interior (7 días)</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-1"></div><div><div class="check-title">Calcetines (7 días)</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-2"></div><div><div class="check-title">Polera manga corta (3)</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-3"></div><div><div class="check-title">Polera manga larga (2)</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-4"></div><div><div class="check-title">Pantalón casual (2)</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-5"></div><div><div class="check-title">Short/bermuda (2)</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-6"></div><div><div class="check-title">Jeans (1)</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-7"></div><div><div class="check-title">Polerón/sweater (1)</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-8"></div><div><div class="check-title">Chaqueta ligera</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-9"></div><div><div class="check-title">Zapatos cómodos</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-10"></div><div><div class="check-title">Zapatillas deporte</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-11"></div><div><div class="check-title">Sandalia/chancleta</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-12"></div><div><div class="check-title">Pijama</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-13"></div><div><div class="check-title">Ropa formal (1 set)</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-14"></div><div><div class="check-title">Cinturón</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-15"></div><div><div class="check-title">Gorro/gorra</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-16"></div><div><div class="check-title">Bufanda (si es frío)</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-17"></div><div><div class="check-title">Guantes (si es frío)</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-18"></div><div><div class="check-title">Mochila día</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-19"></div><div><div class="check-title">Candado maleta</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-20"></div><div><div class="check-title">Bolsas ziploc</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-21"></div><div><div class="check-title">Toalla microfibra</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-22"></div><div><div class="check-title">Botiquín básico</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-23"></div><div><div class="check-title">Protector solar</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-24"></div><div><div class="check-title">Repelente insectos</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-25"></div><div><div class="check-title">Paraguas/impermeable</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-26"></div><div><div class="check-title">Pila portátil (powerbank)</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-27"></div><div><div class="check-title">Cables USB</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-28"></div><div><div class="check-title">Snacks viaje</div></div></div><div class="check-row"><div class="check-circle" id="cc-b2-29"></div><div><div class="check-title">Almohada cuello</div></div></div></div>
+</div></div>
+      <div id="page-presupuesto" class="page">
+<div class="card" style="border-left:3px solid var(--green)">
+  <div class="card-header"><span class="ch-icon">💰</span><span class="ch-title">Total estimado</span></div>
+  <div class="card-body">
+    <div class="budget-row"><span style="color:var(--dim)">Suma de reservas con precio</span><span style="font-weight:700;font-size:15px">CL$ 9.165.274.572</span></div>
+    <div class="budget-row"><span style="color:var(--dim)">Equivalente en dólares</span><span style="font-weight:700;font-size:15px;color:var(--green)" id="total-usd">US$ …</span></div>
+    <div style="font-size:11px;color:var(--dim);margin-top:6px" id="usd-rate-note">Cargando tasa de cambio…</div>
+  </div>
+</div>
+<script>
+(function(){
+  var CLP=9165274572;
+  function pintar(rate,live){
+    var usd=Math.round(CLP/rate);
+    var el=document.getElementById('total-usd');
+    var nt=document.getElementById('usd-rate-note');
+    if(el) el.textContent='US$ '+usd.toLocaleString('es-CL');
+    if(nt) nt.textContent=(live?'Tasa actual: ':'Tasa referencial: ')+'1 USD = $'+Math.round(rate).toLocaleString('es-CL')+' CLP';
+  }
+  pintar(935,false);
+  fetch('https://open.er-api.com/v6/latest/USD').then(function(r){return r.json();}).then(function(d){
+    var rate=d&&d.rates&&d.rates.CLP; if(rate) pintar(rate,true);
+  }).catch(function(){});
+})();
+</script>
+<div class="card">
+  <div class="card-header"><span class="ch-icon">✈</span><span class="ch-title">Vuelos</span></div>
+  <div class="card-body"><div class="budget-row"><span style="color:var(--dim)">LATAM · ••••YJ · RODRIGO FONTAINE COX, MARIA MENDEZ <span style="font-size:11px;color:var(--amber);margin-left:6px">⚠ IDA: LA841 adelantada de 08:40 a 08:35 el 3 Abr 2027 (cambio de hora de verano en Chile). Hora de llegada 12:15 por confirmar.</span></span><span style="font-weight:600">CLP 91.652 + 74.572 millas LATAM Pass</span></div></div>
+</div>
+<div class="card">
+  <div class="card-header"><span class="ch-icon">🏨</span><span class="ch-title">Alojamiento</span></div>
+  <div class="card-body"><div class="budget-row"><span style="color:var(--red)">🗿 Hotel Rapa Nui — sin reservar</span><span style="color:var(--red);font-weight:600">⛔</span></div></div>
+</div>
+<div class="card" style="border-left:3px solid var(--amber)">
+  <div class="card-header"><span class="ch-icon">⚠</span><span class="ch-title" style="color:var(--amber)">Sin precio registrado (1)</span></div>
+  <div class="card-body"><div class="budget-row"><span style="color:var(--amber)">⚠ Hotel Rapa Nui (sin reservar)</span><span style="color:var(--amber);font-weight:600">Sin precio</span></div></div>
+</div></div>
+      <div id="page-restaurantes" class="page"><div class="card"><div class="card-body" style="text-align:center;color:var(--dim);padding:32px">No hay restaurantes registrados.<br><span style="font-size:13px">Agrega reservas en el archivo viaje-data.json bajo la clave "restaurantes".</span></div></div></div>
+      <div id="page-actividades" class="page"><div class="card"><div class="card-body" style="text-align:center;color:var(--dim);padding:32px">No hay actividades registradas.<br><span style="font-size:13px">Agrega entradas, tours o actividades en el archivo viaje-data.json bajo la clave "eventos".</span></div></div></div>
+    </div>
+    <div class="content-right">
+      <div class="map-title-bar">📍 Rapa Nui</div>
+      <div class="map-wrap"><div id="map"></div></div>
+    </div>
+  </div>
+
+  <nav class="ios-nav" id="ios-nav">
+    <button class="ios-nav-item active" data-page="resumen" onclick="showPage('resumen',null)">
+      <span class="ios-nav-ico">✦</span><span class="ios-nav-lbl">Inicio</span>
+    </button>
+    <button class="ios-nav-item" data-page="vuelos" onclick="showPage('vuelos',null)">
+      <span class="ios-nav-ico">🚆</span><span class="ios-nav-lbl">Transporte</span>
+    </button>
+    <button class="ios-nav-item" data-page="hoteles" onclick="showPage('hoteles',null)">
+      <span class="ios-nav-ico">🏨</span><span class="ios-nav-lbl">Hoteles</span>
+    </button>
+    <button class="ios-nav-item" data-page="restaurantes" onclick="showPage('restaurantes',null)">
+      <span class="ios-nav-ico">🍽</span><span class="ios-nav-lbl">Restaurantes</span>
+    </button>
+    <button class="ios-nav-item" data-page="actividades" onclick="showPage('actividades',null)">
+      <span class="ios-nav-ico">🎫</span><span class="ios-nav-lbl">Actividades</span>
+    </button>
+    <button class="ios-nav-item" data-page="mapa" onclick="showPage('mapa',null)">
+      <span class="ios-nav-ico">🗺️</span><span class="ios-nav-lbl">Mapa</span>
+    </button>
+    <button class="ios-nav-item" data-page="presupuesto" onclick="showPage('presupuesto',null)">
+      <span class="ios-nav-ico">💰</span><span class="ios-nav-lbl">Presupuesto</span>
+    </button>
+    <button class="ios-nav-item" data-page="documentos" onclick="showPage('documentos',null)">
+      <span class="ios-nav-ico">📄</span><span class="ios-nav-lbl">Documentos</span>
+    </button>
+    <a class="ios-nav-item" href="https://rodfonta.github.io/TRAVEL/" style="text-decoration:none">
+      <span class="ios-nav-ico">🏠</span><span class="ios-nav-lbl">Viajes</span>
+    </a>
+  </nav>
+
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const SLUG = 'viaje-isla-de-pascua-matri-2027';
+
+function showPage(id, el) {
+  var isMobile = window.innerWidth <= 767;
+  // Handle mobile map tab
+  var contentLeft = document.querySelector('.content-left');
+  var contentRight = document.querySelector('.content-right');
+  if (isMobile) {
+    if (id === 'mapa') {
+      contentLeft.classList.add('mobile-hidden');
+      contentRight.classList.add('mobile-visible');
+      // Esperar a que el contenedor tenga dimensiones reales
+      setTimeout(function() {
+        initMap();
+        setTimeout(function() { if(map) map.invalidateSize({animate:false}); }, 350);
+        setTimeout(function() { if(map) map.invalidateSize({animate:false}); }, 900);
+      }, 120);
+    } else {
+      contentLeft.classList.remove('mobile-hidden');
+      contentRight.classList.remove('mobile-visible');
+    }
+  }
+  if (id !== 'mapa') {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    var pg = document.getElementById('page-' + id);
+    if (pg) pg.classList.add('active');
+  }
+  document.querySelectorAll('.ptab, .sb-item, .ios-nav-item').forEach(t => t.classList.remove('active'));
+  var navItem = document.querySelector('.ios-nav-item[data-page="'+id+'"]');
+  if (navItem) navItem.classList.add('active');
+  if (el) el.classList.add('active');
+  // sync sidebar
+  if (typeof switchMapLayer==='function') switchMapLayer(id);
+  function _initDeferred(fn) {
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){
+      if(typeof fn==='function') { fn(); setTimeout(fn, 400); }
+    }); });
+  }
+  if (id==='restaurantes') _initDeferred(function(){if(typeof initRestaurantMaps==='function')initRestaurantMaps();});
+  if (id==='hoteles')      _initDeferred(function(){if(typeof initHotelMaps==='function')initHotelMaps();});
+  if (id==='actividades')  _initDeferred(function(){if(typeof initActivityMaps==='function')initActivityMaps();});
+  var labelMap = {resumen:'Resumen',vuelos:'Transporte',hoteles:'Hoteles',
+    documentos:'Documentos',checklist:'Checklist',presupuesto:'Presupuesto',
+    restaurantes:'Restaurantes',actividades:'Actividades'};
+  document.querySelectorAll('.sb-item').forEach(i => {
+    var lbl = i.querySelector('.sb-label');
+    if (lbl && lbl.textContent.trim() === (labelMap[id]||'')) i.classList.add('active');
+  });
+  // sync tabs
+  document.querySelectorAll('.ptab').forEach(t => {
+    if (t.getAttribute('onclick') && t.getAttribute('onclick').includes("'"+id+"'")) t.classList.add('active');
+  });
+  // Adjust right panel per tab
+  if (!isMobile) {
+    var cr = document.querySelector('.content-right');
+    var cl = document.querySelector('.content-left');
+    var cs = document.querySelector('.content-split');
+    if (id === 'hoteles' || id === 'restaurantes' || id === 'actividades') {
+      if(cr) cr.style.display = 'none';
+      if(cl) cl.style.gridColumn = '1 / -1';
+      if(cs) cs.style.gridTemplateColumns = '';
+    } else if (id === 'vuelos') {
+      if(cr) cr.style.display = '';
+      if(cl) cl.style.gridColumn = '';
+      if(cs) cs.style.gridTemplateColumns = '30% 70%';
+    } else if (id === 'resumen') {
+      if(cr) cr.style.display = '';
+      if(cl) cl.style.gridColumn = '';
+      if(cs) cs.style.gridTemplateColumns = '50% 50%';
+    } else {
+      if(cr) cr.style.display = '';
+      if(cl) cl.style.gridColumn = '';
+      if(cs) cs.style.gridTemplateColumns = '';
+    }
+    setTimeout(function() { if(window.map) map.invalidateSize({animate:false}); }, 80);
+  }
+}
+
+// Checklist with localStorage
+function toggleCheck(row) {
+  const circle = row.querySelector('.check-circle');
+  const id = row.dataset.id;
+  const done = !circle.classList.contains('done');
+  circle.classList.toggle('done', done);
+  circle.textContent = done ? '✓' : '';
+  row.classList.toggle('done', done);
+  localStorage.setItem('chk_' + SLUG + '_' + id, done ? '1' : '0');
+}
+function loadChecks() {
+  document.querySelectorAll('.check-row').forEach(row => {
+    const id = row.dataset.id;
+    if (id && localStorage.getItem('chk_' + SLUG + '_' + id) === '1') {
+      const circle = row.querySelector('.check-circle');
+      if (circle) { circle.classList.add('done'); circle.textContent = '✓'; }
+      row.classList.add('done');
+    }
+  });
+}
+document.querySelectorAll('.check-row').forEach((row, i) => {
+  if (!row.dataset.id) row.dataset.id = i;
+  row.addEventListener('click', () => toggleCheck(row));
+});
+window.addEventListener('load', loadChecks);
+
+// Map
+
+var map=null, mapInitialized=false;
+var _dL=null, _hL=null, _rL=null, _rteL=null;
+function drawRoad(fromLat,fromLng,toLat,toLng) {
+  var url = 'https://router.project-osrm.org/route/v1/driving/'
+    + fromLng+','+fromLat+';'+toLng+','+toLat
+    + '?overview=full&geometries=geojson';
+  fetch(url)
+    .then(function(r){return r.json();})
+    .then(function(data){
+      var coords = data.routes[0].geometry.coordinates;
+      var latlngs = coords.map(function(c){return [c[1],c[0]];});
+      L.polyline(latlngs,{color:'#d4a843',weight:2.5,opacity:0.7}).addTo(_rteL);
+    })
+    .catch(function(){
+      // Fallback: línea recta si la API no responde
+      L.polyline([[fromLat,fromLng],[toLat,toLng]],{color:'#d4a843',weight:2,dashArray:'4 4',opacity:0.5}).addTo(_rteL);
+    });
+}
+function initMap() {
+  if (mapInitialized) { if(map) map.invalidateSize({animate:false}); return; }
+  mapInitialized = true;
+  map = L.map('map',{zoomControl:true,attributionControl:false}).setView([20,0],2);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19,attribution:''}).addTo(map);
+  function _ic(lbl,bg,shape) {
+    var r=shape==='sq'?'6px':'50%';
+    return L.divIcon({className:'',html:'<div style="width:28px;height:28px;background:'+bg+';border-radius:'+r+';border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#fff">'+lbl+'</div>',iconSize:[28,28],iconAnchor:[14,14]});
+  }
+  _rteL = L.layerGroup().addTo(map);
+  
+  
+  _dL = L.layerGroup().addTo(map);
+  function mkD(ll,color,lbl,popup,missing) {
+    var bg=missing?'#dc2626':color;
+    L.marker(ll,{icon:_ic(lbl,bg,'circle')}).addTo(_dL).bindPopup('<b>'+popup+'</b>');
+  }
+  
+  _hL = L.layerGroup();
+  function mkH(ll,color,popup) {
+    L.marker(ll,{icon:_ic('H',color,'sq')}).addTo(_hL).bindPopup('<b>'+popup+'</b>');
+  }
+  
+  _rL = L.layerGroup();
+  function mkR(ll,popup) {
+    L.marker(ll,{icon:_ic('R','#FF9500','sq')}).addTo(_rL).bindPopup('<b>'+popup+'</b>');
+  }
+  
+  requestAnimationFrame(function(){
+    map.invalidateSize({animate:false});
+    setTimeout(function(){map.invalidateSize({animate:false});},300);
+    setTimeout(function(){map.invalidateSize({animate:false});},1000);
+  });
+}
+function switchMapLayer(tab) {
+  if (!map||!mapInitialized) return;
+  if (tab==='hoteles') {
+    if(_dL&&map.hasLayer(_dL)) map.removeLayer(_dL);
+    if(_rL&&map.hasLayer(_rL)) map.removeLayer(_rL);
+    if(_hL&&!map.hasLayer(_hL)) { _hL.addTo(map); try{var b=_hL.getBounds();if(b.isValid())map.fitBounds(b,{padding:[40,40],maxZoom:15});}catch(ex){} }
+  } else if (tab==='restaurantes') {
+    if(_dL&&map.hasLayer(_dL)) map.removeLayer(_dL);
+    if(_hL&&map.hasLayer(_hL)) map.removeLayer(_hL);
+    if(_rL&&!map.hasLayer(_rL)) { _rL.addTo(map); try{var b=_rL.getBounds();if(b.isValid())map.fitBounds(b,{padding:[40,40],maxZoom:15});}catch(ex){} }
+  } else {
+    if(_hL&&map.hasLayer(_hL)) map.removeLayer(_hL);
+    if(_rL&&map.hasLayer(_rL)) map.removeLayer(_rL);
+    if(_dL&&!map.hasLayer(_dL)) { _dL.addTo(map); try{var b=_dL.getBounds();if(b.isValid())map.fitBounds(b,{padding:[20,20]});}catch(ex){} }
+  }
+}
+if (window.innerWidth>767) {
+  if (document.readyState==='loading') {
+    document.addEventListener('DOMContentLoaded',function(){requestAnimationFrame(function(){initMap();});});
+  } else { requestAnimationFrame(function(){initMap();}); }
+}
+window.addEventListener('resize',function(){if(map)map.invalidateSize({animate:false});});
+
+// Restaurant mini-maps
+
+
+// Hotel mini-maps
+
+
+// Activity mini-maps
+
+</script>
+</body>
+</html>
