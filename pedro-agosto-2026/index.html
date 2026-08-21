@@ -290,7 +290,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;
     </div>
     <div class="sb-item" onclick="showPage('actividades',this)">
       <span class="sb-label">Actividades</span>
-      <span class="sb-badge-g">1</span>
+      <span class="sb-badge-g">2</span>
     </div>
     <div class="sb-item" onclick="showPage('checklist',this)" style="display:none">
       <span class="sb-label">Checklist</span>
@@ -310,7 +310,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;
 
   <div class="topbar">
     <span style="position:absolute;top:10px;right:14px;display:flex;gap:5px;align-items:center;font-family:Inter,sans-serif">
-      <span style="background:#FF3B30;color:#000;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;line-height:1.4">Última actualización: 21 Aug 2026 12:42</span>
+      <span style="background:#FF3B30;color:#000;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;line-height:1.4">Última actualización: 21 Aug 2026 13:13</span>
     </span>
     <div class="trip-title">Pedro Agosto 2026</div>
   </div>
@@ -338,7 +338,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;
     <div class="ptab" onclick="showPage('vuelos',this)">Transporte <span class="ptab-count ok">8</span></div>
     <div class="ptab" onclick="showPage('hoteles',this)">Hoteles <span class="ptab-count ok">8</span></div>
     <div class="ptab" onclick="showPage('restaurantes',this)">Restaurantes </div>
-    <div class="ptab" onclick="showPage('actividades',this)">Actividades <span class="ptab-count ok">1</span></div>
+    <div class="ptab" onclick="showPage('actividades',this)">Actividades <span class="ptab-count ok">2</span></div>
     <div class="ptab" onclick="showPage('presupuesto',this)">Presupuesto</div>
     <div class="ptab" onclick="showPage('documentos',this)">Documentos <span class="ptab-count ok">17</span></div>
     <div class="ptab mobile-map-tab" style="display:none" onclick="showPage('mapa',this)">🗺 Mapa</div>
@@ -447,6 +447,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;
   <div style="font-size:11px;font-weight:600;color:var(--blue)">🏨 Karl Johan Hotel</div>
   <div style="font-size:10px;color:#1e40af;margin-top:2px">Check-in · 16:00 · 2 noches</div>
 </div>
+</div></div><div class="tl-day-header">Jue 3 Sep 2026</div><div class="timeline">
+<div class="tl-item">
+  <div class="tl-dot amber"></div>
+  <div class="tl-main">🎻 Oslo-filharmonien · Thorvaldsdottir, Sibelius og Mendelssohn</div>
+  <div class="tl-sub">19:00 · Oslo Konserthus — Store sal</div>
+  <div class="tl-tags"><span class="tag tag-blue">•••••82</span></div>
 </div></div><div class="tl-day-header">Vie 4 Sep 2026</div><div class="timeline">
 <div class="tl-item">
   <div class="tl-dot green"></div>
@@ -1311,6 +1317,26 @@ function closeDocModal(){
   </div>
   <div class="card-date-bar">
     <div style="flex:1">
+      <div class="fr-date-hdr">Jue 3 Sep 2026</div>
+      <div class="card-entity-name">🎻 Oslo-filharmonien · Thorvaldsdottir, Sibelius og Mendelssohn</div>
+    </div>
+  </div>
+  <div class="card-body">
+    <div class="card-map-row">
+      <div style="flex:1;min-width:0">
+        <div class="rest-addr">📍 Oslo Konserthus — Store sal · Munkedamsveien 14, 0115 Oslo</div>
+        <div class="info-row"><span class="info-lbl">Hora</span><span class="info-val">19:00</span></div><div class="info-row"><span class="info-lbl">Ciudad</span><span class="info-val">Oslo</span></div><div class="info-row"><span class="info-lbl">Reserva</span><span class="info-val mono">•••••82</span></div><div class="info-row"><span class="info-lbl">Detalle</span><span class="info-val">Parkett Venstre, Rad 18, Setes 21–22 · Dør E · Garderobe 6/138–6/139 · Dir. Stasevska / Eberle</span></div><div class="info-row"><span class="info-lbl">Precio</span><span class="info-val" style="font-weight:600">NOK 1.390 (2 × 695)</span></div><div class="info-row"><span class="info-lbl">Teléfono</span><span class="info-val mono">+47 23 11 31 11</span></div>
+      </div>
+      <div id="map-act-0" style="width:70%;min-width:160px;min-height:200px;border-radius:10px;overflow:hidden;flex-shrink:0;border:.5px solid var(--card-border);align-self:stretch"></div>
+    </div>
+  </div>
+</div>
+<div class="card">
+  <div class="card-header" style="border-left:3px solid var(--amber)">
+    <span class="badge badge-green" style="margin-left:auto">✓ Reservado</span>
+  </div>
+  <div class="card-date-bar">
+    <div style="flex:1">
       <div class="fr-date-hdr">Mié 9 Sep 2026</div>
       <div class="card-entity-name">🎫 Kurt Vile &amp; The Violators</div>
     </div>
@@ -1321,7 +1347,7 @@ function closeDocModal(){
         <div class="rest-addr">📍 Troxy · 490 Commercial Road, London E1 0HX</div>
         <div class="info-row"><span class="info-lbl">Hora</span><span class="info-val">19:00</span></div><div class="info-row"><span class="info-lbl">Ciudad</span><span class="info-val">Londres</span></div><div class="info-row"><span class="info-lbl">Reserva</span><span class="info-val mono">••••••••••K7</span></div><div class="info-row"><span class="info-lbl">Detalle</span><span class="info-val">Sec BLK3, Row K, Seats 39-40</span></div><div class="info-row"><span class="info-lbl">Precio</span><span class="info-val" style="font-weight:600">£79.90</span></div><div class="info-row"><span class="info-lbl">Teléfono</span><span class="info-val mono">+44 20 7790 9000</span></div>
       </div>
-      <div id="map-act-0" style="width:70%;min-width:160px;min-height:200px;border-radius:10px;overflow:hidden;flex-shrink:0;border:.5px solid var(--card-border);align-self:stretch"></div>
+      <div id="map-act-1" style="width:70%;min-width:160px;min-height:200px;border-radius:10px;overflow:hidden;flex-shrink:0;border:.5px solid var(--card-border);align-self:stretch"></div>
     </div>
   </div>
 </div></div>
@@ -1605,11 +1631,11 @@ function initHotelMaps() {
 
 var _actMapsDone = {};
 function initActivityMaps() {
-  var acts = [{id:"map-act-0",lat:51.507,lon:-0.127,nombre:"Kurt Vile & The Violators",dir:"Troxy",fecha:"2026-09-09",hora:"19:00",icono:"🎫"}];
+  var acts = [{id:"map-act-0",lat:59.9133,lon:10.729,nombre:"Oslo-filharmonien · Thorvaldsdottir, Sibelius og Mendelssohn",dir:"Oslo Konserthus — Store sal",fecha:"2026-09-03",hora:"19:00",icono:"🎻"},{id:"map-act-1",lat:51.507,lon:-0.127,nombre:"Kurt Vile & The Violators",dir:"Troxy",fecha:"2026-09-09",hora:"19:00",icono:"🎫"}];
   var ovEl = document.getElementById('map-act-overview');
   if (ovEl && !_actMapsDone['overview']) {
     _actMapsDone['overview'] = true;
-    var ov = L.map('map-act-overview',{zoomControl:true,attributionControl:false,scrollWheelZoom:false}).setView([51.507,-0.127],15);
+    var ov = L.map('map-act-overview',{zoomControl:true,attributionControl:false,scrollWheelZoom:false}).setView([55.71015,5.300999999999999],13);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19,attribution:''}).addTo(ov);
     acts.forEach(function(a) {
       var ic = L.divIcon({className:'',html:'<div style="width:30px;height:30px;background:#8e44ad;border-radius:50%;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;font-size:14px">'+a.icono+'</div>',iconSize:[30,30],iconAnchor:[15,15]});
