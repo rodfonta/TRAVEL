@@ -286,7 +286,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;
     </div>
     <div class="sb-item" onclick="showPage('restaurantes',this)">
       <span class="sb-label">Restaurantes</span>
-      <span class="sb-badge-g">2</span>
+      <span class="sb-badge-g">3</span>
     </div>
     <div class="sb-item" onclick="showPage('actividades',this)">
       <span class="sb-label">Actividades</span>
@@ -337,7 +337,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;
     <div class="ptab active" onclick="showPage('resumen',this)">Resumen</div>
     <div class="ptab" onclick="showPage('vuelos',this)">Transporte <span class="ptab-count ok">2</span></div>
     <div class="ptab" onclick="showPage('hoteles',this)">Hoteles <span class="ptab-count ok">1</span></div>
-    <div class="ptab" onclick="showPage('restaurantes',this)">Restaurantes <span class="ptab-count ok">2</span></div>
+    <div class="ptab" onclick="showPage('restaurantes',this)">Restaurantes <span class="ptab-count ok">3</span></div>
     <div class="ptab" onclick="showPage('actividades',this)">Actividades <span class="ptab-count ok">2</span></div>
     <div class="ptab" onclick="showPage('presupuesto',this)">Presupuesto</div>
     <div class="ptab" onclick="showPage('documentos',this)">Documentos <span class="ptab-count ok">6</span></div>
@@ -383,6 +383,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;
 <div class="tl-item">
   <div class="tl-dot amber"></div>
   <div class="tl-main">🍽 Chuí</div>
+  <div class="tl-sub">22:00 · Buenos Aires</div>
+  <div class="tl-tags"><span class="tag tag-green">Res. •••42</span></div>
+</div>
+<div class="tl-item">
+  <div class="tl-dot amber"></div>
+  <div class="tl-main">🍽 Chuí - Buenos Aires</div>
   <div class="tl-sub">22:00 · Buenos Aires</div>
   <div class="tl-tags"><span class="tag tag-green">Res. •••42</span></div>
 </div></div><div class="tl-day-header">Sáb 7 Nov 2026</div><div class="timeline">
@@ -639,11 +645,11 @@ function closeDocModal(){
 </div>
 <div class="card">
   <div class="card-header"><span class="ch-icon">🍽</span><span class="ch-title">Restaurantes</span></div>
-  <div class="card-body"><div class="budget-row"><span style="color:var(--dim)">🍽 Chuí, Buenos Aires · 2026-11-06 · 22:00 <span style="font-size:11px;color:var(--green)">✓ Reservado</span></span><span style="color:var(--amber);font-weight:600">Sin precio</span></div></div>
+  <div class="card-body"><div class="budget-row"><span style="color:var(--dim)">🍽 Chuí, Buenos Aires · 2026-11-06 · 22:00 <span style="font-size:11px;color:var(--green)">✓ Reservado</span></span><span style="color:var(--amber);font-weight:600">Sin precio</span></div><div class="budget-row"><span style="color:var(--dim)">🍽 Chuí - Buenos Aires, Buenos Aires · 2026-11-06 · 22:00 <span style="font-size:11px;color:var(--green)">✓ Reservado</span></span><span style="color:var(--amber);font-weight:600">Sin precio</span></div></div>
 </div>
 <div class="card" style="border-left:3px solid var(--amber)">
-  <div class="card-header"><span class="ch-icon">⚠</span><span class="ch-title" style="color:var(--amber)">Sin precio registrado (1)</span></div>
-  <div class="card-body"><div class="budget-row"><span style="color:var(--amber)">⚠ Restaurante Chuí</span><span style="color:var(--amber);font-weight:600">Sin precio</span></div></div>
+  <div class="card-header"><span class="ch-icon">⚠</span><span class="ch-title" style="color:var(--amber)">Sin precio registrado (2)</span></div>
+  <div class="card-body"><div class="budget-row"><span style="color:var(--amber)">⚠ Restaurante Chuí</span><span style="color:var(--amber);font-weight:600">Sin precio</span></div><div class="budget-row"><span style="color:var(--amber)">⚠ Restaurante Chuí - Buenos Aires</span><span style="color:var(--amber);font-weight:600">Sin precio</span></div></div>
 </div></div>
       <div id="page-restaurantes" class="page">
 <div class="card">
@@ -683,6 +689,26 @@ function closeDocModal(){
         <div class="info-row"><span class="info-lbl">Hora</span><span class="info-val">22:00</span></div><div class="info-row"><span class="info-lbl">Reserva</span><span class="info-val mono">•••42</span></div><div class="info-row"><span class="info-lbl">Teléfono</span><span class="info-val mono">011 15-5471-8397</span></div><div class="info-row" style="border-bottom:none"><span class="info-lbl">Notas</span><span class="info-val">Mesa para 2 · a nombre de Veronica Mendez · OpenTable</span></div>
       </div>
       <div id="map-rest-1" style="width:70%;min-width:160px;min-height:200px;border-radius:10px;overflow:hidden;flex-shrink:0;border:.5px solid var(--card-border);align-self:stretch"></div>
+    </div>
+  </div>
+</div>
+<div class="card">
+  <div class="card-header" style="border-left:3px solid var(--amber)">
+    <span class="badge badge-green" style="margin-left:auto">✓ Reservado</span>
+  </div>
+  <div class="card-date-bar">
+    <div style="flex:1">
+      <div class="fr-date-hdr">Vie 6 Nov 2026</div>
+      <div class="card-entity-name">Chuí - Buenos Aires</div>
+    </div>
+  </div>
+  <div class="card-body">
+    <div class="card-map-row">
+      <div style="flex:1;min-width:0">
+        
+        <div class="info-row"><span class="info-lbl">Hora</span><span class="info-val">22:00</span></div><div class="info-row"><span class="info-lbl">Reserva</span><span class="info-val mono">•••42</span></div>
+      </div>
+      <div id="map-rest-2" style="width:70%;min-width:160px;min-height:200px;border-radius:10px;overflow:hidden;flex-shrink:0;border:.5px solid var(--card-border);align-self:stretch"></div>
     </div>
   </div>
 </div></div>
@@ -921,6 +947,7 @@ function initMap() {
   }
   mkR([-34.603,-58.381],"El Preferido · 23:30");
   mkR([-34.603,-58.381],"Chuí · 22:00");
+  mkR([-34.603,-58.381],"Chuí - Buenos Aires · 22:00");
   requestAnimationFrame(function(){
     map.invalidateSize({animate:false});
     setTimeout(function(){map.invalidateSize({animate:false});},300);
@@ -954,7 +981,7 @@ window.addEventListener('resize',function(){if(map)map.invalidateSize({animate:f
 
 var _restMapsDone = {};
 function initRestaurantMaps() {
-  var rests = [{id:"map-rest-0",lat:-34.603,lon:-58.381,nombre:"El Preferido",dir:"",fecha:"2026-11-05",hora:"23:30"},{id:"map-rest-1",lat:-34.603,lon:-58.381,nombre:"Chuí",dir:"Loyola 1250, Villa Crespo, Ciudad Autónoma de Buenos Aires C1414",fecha:"2026-11-06",hora:"22:00"}];
+  var rests = [{id:"map-rest-0",lat:-34.603,lon:-58.381,nombre:"El Preferido",dir:"",fecha:"2026-11-05",hora:"23:30"},{id:"map-rest-1",lat:-34.603,lon:-58.381,nombre:"Chuí",dir:"Loyola 1250, Villa Crespo, Ciudad Autónoma de Buenos Aires C1414",fecha:"2026-11-06",hora:"22:00"},{id:"map-rest-2",lat:-34.603,lon:-58.381,nombre:"Chuí - Buenos Aires",dir:"",fecha:"2026-11-06",hora:"22:00"}];
   // Overview map
   var ovEl = document.getElementById('map-rest-overview');
   if (ovEl && !_restMapsDone['overview']) {
